@@ -21,7 +21,9 @@ import java.io.File;
 public abstract class WineThemeManager {
     public enum Theme {LIGHT, DARK}
     public enum BackgroundType {IMAGE, COLOR}
-    public static final String DEFAULT_DESKTOP_THEME = Theme.LIGHT+","+BackgroundType.IMAGE+",#0277bd";
+    public static final String VANTA_WALLPAPER_ID = "wallpaper-4";
+    public static final String DEFAULT_DESKTOP_THEME = Theme.DARK+","+BackgroundType.IMAGE+",#100e17,"+VANTA_WALLPAPER_ID;
+    public static final String LEGACY_DESKTOP_THEME = Theme.LIGHT+","+BackgroundType.IMAGE+",#100e17,wallpaper-1";
     public static final String DEFAULT_WALLPAPER_ID = "wallpaper-1";
 
     public static class ThemeInfo {
@@ -63,7 +65,7 @@ public abstract class WineThemeManager {
 
             if (themeInfo.theme == Theme.LIGHT) {
                 registryEditor.setStringValue("Control Panel\\Colors", "ActiveBorder", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "ActiveTitle", "96 125 139");
+                registryEditor.setStringValue("Control Panel\\Colors", "ActiveTitle", "76 29 149");
                 registryEditor.setStringValue("Control Panel\\Colors", "Background", background);
                 registryEditor.setStringValue("Control Panel\\Colors", "ButtonAlternateFace", "245 245 245");
                 registryEditor.setStringValue("Control Panel\\Colors", "ButtonDkShadow", "158 158 158");
@@ -72,12 +74,12 @@ public abstract class WineThemeManager {
                 registryEditor.setStringValue("Control Panel\\Colors", "ButtonLight", "255 255 255");
                 registryEditor.setStringValue("Control Panel\\Colors", "ButtonShadow", "158 158 158");
                 registryEditor.setStringValue("Control Panel\\Colors", "ButtonText", "0 0 0");
-                registryEditor.setStringValue("Control Panel\\Colors", "GradientActiveTitle", "96 125 139");
+                registryEditor.setStringValue("Control Panel\\Colors", "GradientActiveTitle", "76 29 149");
                 registryEditor.setStringValue("Control Panel\\Colors", "GradientInactiveTitle", "117 117 117");
                 registryEditor.setStringValue("Control Panel\\Colors", "GrayText", "158 158 158");
-                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "HilightText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveBorder", "255 255 255");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitle", "117 117 117");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitleText", "200 200 200");
@@ -85,7 +87,7 @@ public abstract class WineThemeManager {
                 registryEditor.setStringValue("Control Panel\\Colors", "InfoWindow", "255 255 255");
                 registryEditor.setStringValue("Control Panel\\Colors", "Menu", "245 245 245");
                 registryEditor.setStringValue("Control Panel\\Colors", "MenuBar", "245 245 245");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "MenuText", "0 0 0");
                 registryEditor.setStringValue("Control Panel\\Colors", "Scrollbar", "245 245 245");
                 registryEditor.setStringValue("Control Panel\\Colors", "TitleText", "255 255 255");
@@ -107,9 +109,9 @@ public abstract class WineThemeManager {
                 registryEditor.setStringValue("Control Panel\\Colors", "GradientActiveTitle", "33 33 33");
                 registryEditor.setStringValue("Control Panel\\Colors", "GradientInactiveTitle", "33 33 33");
                 registryEditor.setStringValue("Control Panel\\Colors", "GrayText", "117 117 117");
-                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "Hilight", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "HilightText", "255 255 255");
-                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "HotTrackingColor", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveBorder", "48 48 48");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitle", "33 33 33");
                 registryEditor.setStringValue("Control Panel\\Colors", "InactiveTitleText", "117 117 117");
@@ -117,7 +119,7 @@ public abstract class WineThemeManager {
                 registryEditor.setStringValue("Control Panel\\Colors", "InfoWindow", "255 255 255");
                 registryEditor.setStringValue("Control Panel\\Colors", "Menu", "33 33 33");
                 registryEditor.setStringValue("Control Panel\\Colors", "MenuBar", "48 48 48");
-                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "2 136 209");
+                registryEditor.setStringValue("Control Panel\\Colors", "MenuHilight", "124 58 237");
                 registryEditor.setStringValue("Control Panel\\Colors", "MenuText", "255 255 255");
                 registryEditor.setStringValue("Control Panel\\Colors", "Scrollbar", "48 48 48");
                 registryEditor.setStringValue("Control Panel\\Colors", "TitleText", "255 255 255");

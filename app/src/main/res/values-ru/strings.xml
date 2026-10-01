@@ -43,6 +43,9 @@
     <string name="drawer_tagline">Игры Windows всегда под рукой</string>
     <string name="drawer_attribution">Основано на Winlator</string>
     <string name="drawer_community">Открытый код · Сообщество</string>
+    <string name="drawer_runtime">Среда выполнения</string>
+    <string name="drawer_tools">Инструменты</string>
+    <string name="drawer_system">Система</string>
     <string name="section_general">ОБЩЕЕ</string>
     <string name="section_graphics">ГРАФИКА</string>
     <string name="section_compatibility">СОВМЕСТИМОСТЬ</string>
@@ -50,7 +53,13 @@
     <string name="section_advanced">РАСШИРЕННЫЕ НАСТРОЙКИ</string>
     <string name="recommended_configuration">Рекомендуемая конфигурация</string>
     <string name="recommended_configuration_note">Проверьте предлагаемые изменения перед применением. Остальные настройки не изменятся.</string>
-    <string name="recommended_configuration_preview">Драйвер Vulkan: %1$s %2$s\nДрайвер OpenGL: %3$s %4$s\nDX-обёртка: %5$s\nВерсия DXVK: %6$s\nWine: %7$s\nПрофиль Box64: %8$s (%9$s)\nРазрешение: %10$s\nОграничение FPS: %11$s</string>
+    <string name="recommended_profile">Профиль</string>
+    <string name="recommendation_balanced">Сбалансированный</string>
+    <string name="recommendation_compatibility">Совместимость</string>
+    <string name="recommendation_performance">Производительность</string>
+    <string name="recommended_configuration_preview">Профиль: %1$s\nДрайвер Vulkan: %2$s %3$s\nДрайвер OpenGL: %4$s %5$s\nDX-обёртка: %6$s\nВерсия DXVK: %7$s\nWine: %8$s\nПрофиль Box64: %9$s (%10$s)\nРазрешение: %11$s\nОграничение FPS: %12$s</string>
+    <string name="use_vanta_wallpaper">Использовать обои Vanta</string>
+    <string name="validating_component_package">Проверка пакета компонента…</string>
     <string name="not_applicable">Не применимо</string>
     <string name="off">Выкл.</string>
     <string name="input_controls">Управление вводом</string>

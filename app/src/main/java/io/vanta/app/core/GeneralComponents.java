@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public abstract class GeneralComponents {
     public enum InstallMode {DOWNLOAD, FILE, BOTH}
@@ -258,16 +259,93 @@ public abstract class GeneralComponents {
             return;
         }
         HttpUtils.download(activity, String.format(INSTALLABLE_COMPONENTS_URL, type.lowerName()+"/"+filename), candidate, (success) -> {
-            boolean packageDownloaded = success && candidate.isFile() && candidate.length() > 0;
-            if (packageDownloaded && replaceComponentArchive(candidate, destination)) {
-                loadSpinner(type, spinner, identifier, defaultItem);
-                if (onComponentsChanged != null) onComponentsChanged.run();
-            }
-            else {
+            if (!success) {
                 FileUtils.delete(candidate);
-                AppUtils.showToast(activity, success ? R.string.unable_to_install_component : R.string.a_network_error_occurred);
+                AppUtils.showToast(activity, R.string.a_network_error_occurred);
+                return;
             }
+
+            if (!candidate.isFile() || candidate.length() == 0) {
+                FileUtils.delete(candidate);
+                AppUtils.showToast(activity, R.string.unable_to_install_component);
+                return;
+            }
+
+            PreloaderDialog validationDialog = new PreloaderDialog(activity);
+            validationDialog.show(R.string.validating_component_package);
+            Executors.newSingleThreadExecutor().execute(() -> {
+                boolean validPackage = validateDownloadedPackage(type, candidate, activity);
+                activity.runOnUiThread(() -> {
+                    validationDialog.close();
+                    if (validPackage && replaceComponentArchive(candidate, destination)) {
+                        loadSpinner(type, spinner, identifier, defaultItem);
+                        if (onComponentsChanged != null) onComponentsChanged.run();
+                    }
+                    else {
+                        FileUtils.delete(candidate);
+                        AppUtils.showToast(activity, R.string.unable_to_install_component);
+                    }
+                });
+            });
         });
+    }
+
+    private static boolean validateDownloadedPackage(Type type, File archive, Context context) {
+        String[] expectedPaths;
+        switch (type) {
+            case BOX64:
+                expectedPaths = new String[]{"/usr/local/bin/box64"};
+                break;
+            case TURNIP:
+                expectedPaths = new String[]{"/usr/lib/libvulkan_freedreno.so",
+                        "/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json"};
+                break;
+            case DXVK:
+                expectedPaths = new String[]{"/system32/d3d11.dll", "/syswow64/d3d11.dll"};
+                break;
+            case VKD3D:
+                expectedPaths = new String[]{"/system32/d3d12.dll", "/syswow64/d3d12.dll"};
+                break;
+            case WINED3D:
+                expectedPaths = new String[]{"/system32/d3d9.dll", "/syswow64/d3d9.dll"};
+                break;
+            default:
+                return false;
+        }
+
+        boolean[] foundPaths = new boolean[expectedPaths.length];
+        File validationRoot = new File(context.getCacheDir(), "component-validation");
+        String validationRootPath = validationRoot.getPath().replace('\\', '/').toLowerCase(Locale.ENGLISH)+"/";
+        boolean validArchive = TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, archive,
+                validationRoot, (entry, size) -> {
+                    if (size > 0) {
+                        String entryPath = entry.getPath().replace('\\', '/').toLowerCase(Locale.ENGLISH);
+                        if (entryPath.startsWith(validationRootPath)) {
+                            String relativePath = entryPath.substring(validationRootPath.length());
+                            while (relativePath.startsWith("./")) relativePath = relativePath.substring(2);
+                            for (int i = 0; i < expectedPaths.length; i++) {
+                                if (relativePath.equals(expectedPaths[i].substring(1))) foundPaths[i] = true;
+                            }
+                        }
+                    }
+                    return null;
+                });
+        if (!validArchive) return false;
+        for (boolean foundPath : foundPaths) if (!foundPath) return false;
+
+        if (type == Type.BOX64) return isAarch64Elf(archive, "usr/local/bin/box64");
+        if (type == Type.TURNIP) return isAarch64Elf(archive, "usr/lib/libvulkan_freedreno.so");
+        return true;
+    }
+
+    private static boolean isAarch64Elf(File archive, String memberPath) {
+        byte[] header = TarCompressorUtils.read(TarCompressorUtils.Type.ZSTD, archive, "*"+memberPath);
+        if (header == null || header.length < 20 || header[0] != 0x7f ||
+                header[1] != 'E' || header[2] != 'L' || header[3] != 'F') return false;
+        int elfClass = header[4] & 0xff;
+        int dataEncoding = header[5] & 0xff;
+        int machine = (header[18] & 0xff) | ((header[19] & 0xff) << 8);
+        return elfClass == 2 && dataEncoding == 1 && machine == 183;
     }
 
     private static boolean installFromPackagedFile(Context context, TarCompressorUtils.Type compressedType, final Type type, File originFile, String identifier, JSONArray filesJSONArray) throws JSONException {

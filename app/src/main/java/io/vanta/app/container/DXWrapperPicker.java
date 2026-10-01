@@ -72,12 +72,16 @@ public class DXWrapperPicker {
     }
 
     public void applyRecommendedDXVK(String graphicsDriver) {
+        applyRecommendedDXVK(DefaultVersion.DXVK(graphicsDriver), "0");
+    }
+
+    public void applyRecommendedDXVK(String version, String framerate) {
         TaggedSelectionBox direct3D = (TaggedSelectionBox)container.getChildAt(0);
         direct3D.setSelectedItem(DXWrappers.getName(DXWrappers.DXVK));
 
         KeyValueSet[] configs = DXWrappers.parseConfigs(DXWrappers.DXVK, getDXWrapperConfig());
-        configs[0].put("version", DefaultVersion.DXVK(graphicsDriver));
-        configs[0].put("framerate", "0");
+        configs[0].put("version", version);
+        configs[0].put("framerate", framerate);
         direct3D.setTag(configs[0].toString());
     }
 

@@ -4,6 +4,9 @@
     <string name="drawer_tagline">Windows Gaming In Your Hands</string>
     <string name="drawer_attribution">Based on Winlator</string>
     <string name="drawer_community">Open Source · Community Driven</string>
+    <string name="drawer_runtime">Runtime</string>
+    <string name="drawer_tools">Tools</string>
+    <string name="drawer_system">System</string>
     <string name="about_based_on_winlator">Based on Winlator · Open source community project</string>
     <string name="containers_subtitle">Your Windows environments, ready to play.</string>
     <string name="search_containers">Search containers</string>
@@ -56,6 +59,7 @@
     <string name="component_removal_failed">Unable to remove this component package.</string>
     <string name="unable_to_open_component_package">Unable to access the selected component package.</string>
     <string name="unable_to_install_component">The selected file is not a valid compatible component package.</string>
+    <string name="validating_component_package">Validating component package…</string>
     <string name="box64_component_unavailable">Box64 %1$s is not installed. Install it again or select an available version.</string>
     <string name="box64_component_extract_failed">Unable to install Box64 %1$s into the runtime.</string>
     <string name="launch">Launch</string>
@@ -67,7 +71,12 @@
     <string name="section_advanced">ADVANCED CONFIGURATION</string>
     <string name="recommended_configuration">Recommended Configuration</string>
     <string name="recommended_configuration_note">Review the proposed changes before applying. Other settings will remain unchanged.</string>
-    <string name="recommended_configuration_preview">Vulkan driver: %1$s %2$s\nOpenGL driver: %3$s %4$s\nDX wrapper: %5$s\nDXVK version: %6$s\nWine: %7$s\nBox64 preset: %8$s (%9$s)\nResolution: %10$s\nFPS limit: %11$s</string>
+    <string name="recommended_profile">Profile</string>
+    <string name="recommendation_balanced">Balanced</string>
+    <string name="recommendation_compatibility">Compatibility</string>
+    <string name="recommendation_performance">Performance</string>
+    <string name="recommended_configuration_preview">Profile: %1$s\nVulkan driver: %2$s %3$s\nOpenGL driver: %4$s %5$s\nDX wrapper: %6$s\nDXVK version: %7$s\nWine: %8$s\nBox64 preset: %9$s (%10$s)\nResolution: %11$s\nFPS limit: %12$s</string>
+    <string name="use_vanta_wallpaper">Use Vanta desktop wallpaper</string>
     <string name="not_applicable">Not applicable</string>
     <string name="off">Off</string>
     <string name="run">Run</string>

@@ -247,6 +247,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/TVHUDModeLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/hud_mode" />
@@ -370,6 +371,14 @@
                                 android:layout_height="wrap_content"
                                 android:visibility="gone" />
                         </LinearLayout>
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/BTVantaWallpaper"
+                            style="@style/VantaSecondaryButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/use_vanta_wallpaper" />
 
                         <TextView
                             android:layout_width="wrap_content"

@@ -45,7 +45,7 @@ public class Container {
     private byte startupSelection = STARTUP_SELECTION_ESSENTIAL;
     private String cpuList;
     private String cpuListWoW64;
-    private String desktopTheme = WineThemeManager.DEFAULT_DESKTOP_THEME;
+    private String desktopTheme = WineThemeManager.LEGACY_DESKTOP_THEME;
     private String box64Preset = Box64Preset.DEFAULT;
     private String box64Version = "";
     private File rootDir;

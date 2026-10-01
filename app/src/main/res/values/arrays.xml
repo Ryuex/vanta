@@ -68,6 +68,11 @@
         <item>@string/dxvk_preset_balanced</item>
         <item>@string/dxvk_preset_performance</item>
     </string-array>
+    <string-array name="container_recommendation_profiles">
+        <item>@string/recommendation_balanced</item>
+        <item>@string/recommendation_compatibility</item>
+        <item>@string/recommendation_performance</item>
+    </string-array>
     <string-array name="ddraw_wrapper_entries">
         <item>WineD3D</item>
         <item>CNC DDraw</item>
