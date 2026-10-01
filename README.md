@@ -1,426 +1,248 @@
-cat > README.md <<'EOF'
 <p align="center">
-  <img src="docs/images/vanta-logo.png" width="180" alt="Vanta Logo">
+  <img src="docs/images/vanta-logo.png" width="180" alt="Logo do Vanta">
 </p>
 
 <h1 align="center">Vanta</h1>
 
 <p align="center">
-  <b>Windows compatibility environment for Android</b>
+  Ambiente de compatibilidade Windows para Android
 </p>
 
 <p align="center">
-  Based on Winlator • Wine • Box64 • Mesa • DXVK
+  Baseado em Winlator • Wine • Box64 • Mesa • DXVK
 </p>
 
 ---
 
 > [!WARNING]
-> **Vanta is currently experimental.**
+> **O Vanta está atualmente em fase experimental.**
 >
-> Pre-release builds may contain bugs, crashes, graphical issues,
-> performance regressions or device-specific incompatibilities.
+> Versões de pré-lançamento podem apresentar bugs, travamentos, problemas gráficos, regressões de desempenho ou incompatibilidades específicas de determinados dispositivos.
 
-## 💜 About Vanta
+## Sobre o Vanta
 
-Vanta is an Android Windows compatibility project focused on performance,
-runtime management, GPU compatibility and a polished mobile experience.
+O **Vanta** é um projeto de compatibilidade para Android voltado à execução de aplicativos e jogos Windows x86_64.
 
-Vanta is based on **Winlator**, created by
-**BrunoSX / brunodev85**.
+O projeto é baseado no **Winlator**, criado por **BrunoSX / brunodev85**, e utiliza tecnologias como Wine, Box64, Mesa, DXVK e VKD3D.
 
-Original Winlator project:
+O objetivo do Vanta é expandir essa base com uma interface própria, gerenciamento de runtimes, perfis de compatibilidade, ferramentas de diagnóstico e suporte aprimorado para diferentes GPUs Android.
 
-https://github.com/brunodev85/winlator
+O Vanta não reivindica autoria sobre o código original do Winlator ou sobre projetos de terceiros utilizados pelo aplicativo.
 
-The project builds upon the work of Winlator while developing additional
-runtime management, graphics configuration, performance tools, UI improvements
-and experimental GPU compatibility features.
+## Desenvolvimento atual
 
-Vanta does not claim authorship of upstream Winlator code.
+O desenvolvimento atual do Vanta inclui:
 
----
+- Gerenciador de Runtime
+- Gerenciamento de Wine
+- Gerenciamento de DXVK
+- Configuração de Box64
+- Perfis de compatibilidade
+- Detecção de capacidades da GPU
+- Suporte a Turnip para GPUs Adreno
+- Infraestrutura experimental para GPUs Mali
+- Sistema de pacotes para runtimes gráficos
+- Thermal Guard
+- Controles personalizados
+- Ferramentas de diagnóstico
+- Monitoramento de desempenho
 
-## 🚀 Current Development
+## Runtime para GPUs Mali
 
-Current Vanta development includes:
+O Vanta possui uma infraestrutura experimental dedicada ao desenvolvimento de compatibilidade com GPUs **ARM Mali**.
 
-- Runtime Manager
-- Wine management
-- DXVK and DirectX translation configuration
-- Graphics driver management
-- Graphics wrapper management
-- Box64 configuration and presets
-- Vanta Thermal Guard
-- Performance profiles
-- GPU capability detection
-- Mali Runtime foundation
-- Graphics Runtime Packages
-- Separate Vulkan Driver and Wrapper architecture
-- PanVK package infrastructure
-- Vanta Wrapper architecture
-- Improved virtual controls
-- Vanta desktop experience
-- Turnip / Adreno support
-- Per-container graphics configuration
+O sistema permite separar e gerenciar:
 
-Vanta is under active development and some features are still experimental.
+- drivers Vulkan;
+- wrappers gráficos;
+- versões diferentes de runtimes;
+- requisitos de GPU;
+- requisitos de kernel e kbase;
+- compatibilidade com Job Manager e CSF.
 
----
+O Vanta possui atualmente um caminho gráfico **Stable / Current** utilizado como fallback conservador.
 
-## 🟣 Vanta Mali Runtime
+Versões futuras poderão utilizar diferentes runtimes dependendo do hardware detectado.
 
-Vanta already includes a working graphics wrapper/runtime path inherited and
-adapted from its current Winlator-based graphics stack.
+## Vanta Wrapper
 
-The important distinction is that the current Vanta build does **not yet bundle
-multiple alternative Mali wrapper versions**.
+O **Vanta Wrapper** está em desenvolvimento.
 
-Vanta 3.3 introduces a modular graphics-runtime architecture designed to allow
-different Vulkan drivers and graphics wrappers to coexist without permanently
-replacing the stable runtime path.
+A opção:
 
-### Graphics Wrappers
+`Vanta Wrapper (Auto)`
 
-Vanta already ships with its current **Stable / Current** graphics
-wrapper/runtime path.
+foi projetada para funcionar como uma camada de seleção e orquestração automática.
 
-The new graphics-runtime architecture adds support for additional wrapper
-packages.
+A intenção é permitir que o Vanta determine o backend gráfico mais apropriado considerando fatores como:
 
-At this stage:
+- GPU;
+- geração da GPU;
+- driver disponível;
+- versão do Android;
+- kernel;
+- compatibilidade do jogo;
+- API gráfica utilizada.
 
-- The existing Vanta graphics wrapper/runtime path remains available.
-- Stable / Current remains the conservative fallback.
-- Additional alternative wrapper versions are not bundled with the APK yet.
-- Compatible graphics wrapper packages can be imported through Vanta.
-- Community wrapper packages can be imported when they follow the expected
-  Vanta runtime-package format and are compatible with the device.
-- Experimental wrappers can remain isolated from the stable runtime.
-- Different implementations can be tested without permanently replacing the
-  current graphics path.
+Atualmente, o modo automático utiliza um caminho conservador **Stable / Current** quando não existe uma alternativa validada.
 
-Wrapper compatibility can depend on:
+O nome Vanta Wrapper representa o sistema de gerenciamento e seleção do Vanta e **não reivindica autoria sobre wrappers ou drivers desenvolvidos por terceiros**.
 
-- GPU
-- Vulkan driver
-- Android version
-- kernel
-- graphics capabilities
-- DirectX translation layer
-- game
+## Runtimes gráficos da comunidade
 
-Because of these differences, importing a wrapper does not guarantee
-compatibility with every device or game.
+O Vanta está sendo preparado para permitir a instalação de pacotes gráficos compatíveis sem que todos os componentes precisem estar incorporados diretamente ao APK.
 
-Users should keep the **Stable / Current** configuration available as a
-fallback.
+O sistema de pacotes pode armazenar informações como:
 
----
+- nome;
+- versão;
+- projeto de origem;
+- commit;
+- licença;
+- SHA-256;
+- arquitetura;
+- família da GPU;
+- requisitos de kernel;
+- requisitos de kbase;
+- limitações conhecidas.
 
-## 💜 Vanta Wrapper
+Pacotes incompatíveis ou inválidos devem ser rejeitados antes da instalação.
 
-The **Vanta Wrapper** system is currently under development.
+## Arquitetura gráfica
 
-`Vanta Wrapper (Auto)` is designed as an orchestration and automatic-selection
-layer.
+O caminho gráfico utilizado pelo Vanta pode ser representado de forma simplificada assim:
 
-The long-term objective is for Vanta to inspect information such as:
-
-- GPU model
-- GPU generation
-- Vulkan capabilities
-- active Vulkan driver
-- graphics features
-- compatibility information
-- wrapper availability
-
-and select an appropriate graphics backend.
-
-For now, `Vanta Wrapper (Auto)` uses the existing Stable / Current path as its
-conservative fallback when an alternative configuration has not been validated.
-
-Vanta does not claim authorship of third-party wrapper implementations.
-
-Third-party wrappers remain projects of their respective developers and retain
-their respective licenses and attribution.
-
----
-
-## 🌐 Community Graphics Runtimes
-
-The Vanta Graphics Runtime Package system is designed to allow graphics
-components to evolve independently from the main APK.
-
-This architecture can allow compatible community packages to be imported into
-Vanta for testing.
-
-This includes future packages for:
-
-- Graphics wrappers
-- Vulkan drivers
-- Experimental Mali components
-- Other compatible graphics-runtime components
-
-The objective is to make graphics experimentation possible without requiring
-every experimental component to be permanently bundled with Vanta.
-
-Community packages are experimental unless explicitly stated otherwise.
-
-Users should only import packages from sources they trust.
-
----
-
-## 🧩 Graphics Runtime Architecture
-
-Vanta separates the graphics stack into different layers.
-
-Conceptually:
-
-Windows Game
-
-↓
-
+```text
+Jogo Windows
+      ↓
 DXVK / D7VK / VKD3D / WineD3D
-
-↓
-
-Graphics Wrapper (when required)
-
-↓
-
-Vulkan Driver
-
-↓
-
-Android / Linux GPU interface
-
-↓
-
+      ↓
+Wrapper gráfico (quando necessário)
+      ↓
+Driver Vulkan
+      ↓
+Interface Android/Linux da GPU
+      ↓
 GPU
+```
 
-This distinction is important.
+Essa separação permite que drivers Vulkan e wrappers sejam tratados como componentes diferentes.
 
-A **graphics wrapper** and a **Vulkan driver** are not the same component.
+## PanVK
 
----
+O suporte ao **PanVK** está em desenvolvimento.
 
-## 🟠 PanVK
+A infraestrutura do Vanta já está sendo preparada para trabalhar com pacotes de drivers Vulkan instaláveis.
 
-PanVK support is under active development.
+O PanVK é tratado corretamente como um **driver Vulkan**, e não simplesmente como um wrapper gráfico.
 
-Vanta 3.3 currently contains infrastructure for managing Vulkan-driver packages,
-but a complete third-party PanVK runtime is **not yet bundled with the APK**.
+Atualmente, o Vanta **não inclui um runtime PanVK completo de terceiros dentro do APK**.
 
-PanVK is treated by Vanta as a **Vulkan driver**, not as a graphics wrapper.
+A proposta futura é permitir instalação e seleção de versões compatíveis através do sistema de pacotes do Vanta.
 
-The intended Mali architecture can support configurations conceptually similar
-to:
+A compatibilidade pode variar conforme:
 
-Windows Game
+- modelo da GPU Mali;
+- geração da arquitetura;
+- kernel do dispositivo;
+- versão do driver do kernel;
+- kbase;
+- Job Manager;
+- CSF;
+- versão do Android.
 
-↓
+## Thermal Guard
 
-DXVK / D7VK / VKD3D
+O **Thermal Guard** é a camada de monitoramento térmico do Vanta.
 
-↓
+Seu objetivo é ajudar a manter desempenho sustentável durante sessões prolongadas.
 
-Graphics Wrapper
+A arquitetura foi preparada para utilizar os estados térmicos fornecidos oficialmente pelo Android quando disponíveis.
 
-↓
+Entre os objetivos estão:
 
-PanVK
+- avisos de aquecimento;
+- perfil Eco;
+- perfil Balanceado;
+- perfil Desempenho;
+- controle temporário de FPS;
+- recuperação gradual de desempenho;
+- prevenção de alterações destrutivas no sistema.
 
-↓
+O Thermal Guard não depende de root e não foi projetado para desativar as proteções térmicas do Android.
 
-Mali GPU
+## GPUs Adreno
 
-or:
+Para dispositivos com GPU **Qualcomm Adreno**, o Vanta mantém suporte ao ecossistema **Mesa Turnip**.
 
-Windows Game
+A configuração Turnip + DXVK continua sendo um dos principais caminhos gráficos disponíveis no projeto.
 
-↓
+O desenvolvimento das funcionalidades Mali não deve substituir nem prejudicar o caminho existente para GPUs Adreno.
 
-DXVK / D7VK / VKD3D
+## Software experimental
 
-↓
+O Vanta ainda está em desenvolvimento.
 
-Graphics Wrapper
+Alguns recursos podem:
 
-↓
+- não funcionar em determinados aparelhos;
+- apresentar regressões;
+- depender da GPU ou do driver;
+- mudar entre versões;
+- exigir testes adicionais.
 
-System / Proprietary Mali Vulkan Driver
+Antes de atualizar, é recomendado manter backup de containers e arquivos importantes.
 
-↓
+## Downloads
 
-Mali GPU
+As versões públicas do Vanta são disponibilizadas através da seção **Releases** deste repositório.
 
-Compatible PanVK builds can eventually be imported and managed as versioned
-graphics-runtime packages.
+Builds marcadas como **Pré-lançamento** devem ser consideradas experimentais.
 
-This avoids treating a single experimental PanVK build as universally
-compatible with every Mali device.
+## Créditos
 
-PanVK compatibility may depend on:
+O Vanta é baseado no projeto **Winlator**.
 
-- Mali GPU generation
-- Bifrost / Valhall / newer architectures
-- Android version
-- kernel
-- kbase implementation
-- Job Manager / CSF
-- Vulkan capabilities
-- graphics wrapper
-- DirectX translation layer
+O Winlator foi criado por **BrunoSX / brunodev85**.
 
-For this reason, Vanta will not assume that one PanVK build works on every
-Mali GPU.
-
-PanVK integration is currently experimental and is not yet considered complete.
-
----
-
-## 🔥 Thermal Guard
-
-Vanta includes development toward a thermal-management and sustainable
-performance layer.
-
-The goal of Vanta Thermal Guard is not to bypass Android thermal protection.
-
-Instead, Vanta can use Android thermal information to help detect thermal
-pressure and provide appropriate warnings or performance policies.
-
-The project prioritizes sustainable mobile performance rather than only maximum
-short-term FPS.
-
----
-
-## 🎮 Adreno / Turnip
-
-The existing Adreno graphics path remains supported.
-
-Vanta preserves the Turnip-based graphics stack used for compatible Adreno
-devices.
-
-Development of the Mali Runtime must not require replacing the working Adreno
-path.
-
----
-
-## 🧪 Experimental Software
-
-Vanta is currently experimental software.
-
-A successful APK build does not guarantee compatibility with every:
-
-- Android device
-- GPU
-- driver
-- Windows application
-- game
-
-Pre-release builds may contain regressions.
-
-When reporting a graphics problem, useful information includes:
-
-- Vanta version
-- Device model
-- GPU model
-- Android version
-- Vulkan driver
-- Graphics wrapper
-- DXVK / D7VK / VKD3D version
-- Wine version
-- Box64 version
-- Performance profile
-- Description of the problem
-
-Future Vanta diagnostics are intended to make this information easier to
-collect.
-
----
-
-## 📦 Downloads
-
-Official public Vanta builds are distributed through the repository's
-**GitHub Releases**.
-
-Versions marked **Pre-release** should be considered experimental and intended
-for testing.
-
-Do not assume a Pre-release build is more stable simply because its version
-number is newer.
-
----
-
-## 🛠️ Credits and Upstream Projects
-
-Vanta exists because of the work of many open-source developers and projects.
-
-### ❤️ Winlator
-
-Vanta is based on the **Winlator** project.
-
-**Winlator was created by BrunoSX / brunodev85.**
-
-Original project:
+Projeto original:
 
 https://github.com/brunodev85/winlator
 
-A significant part of the foundation that makes Vanta possible originates from
-Winlator and the projects integrated by it.
+Agradecimentos aos desenvolvedores e colaboradores dos projetos que tornam este trabalho possível.
 
-Vanta preserves credit to the original Winlator project and does not claim
-authorship of upstream Winlator code.
+### Projetos e tecnologias de terceiros
 
-Special thanks to **BrunoSX / brunodev85** for creating Winlator and making
-this type of Android compatibility project possible.
+O Vanta utiliza ou deriva trabalho de diversos projetos de código aberto, incluindo:
 
-### Third-Party Projects
+- Winlator
+- Wine
+- Box86
+- Box64
+- Mesa
+- Turnip
+- Panfrost / PanVK
+- DXVK
+- VKD3D
+- CNC DDraw
+- VirGL
+- Vortek
+- Termux e patches relacionados ao GLIBC
 
-Special thanks to the developers and communities behind:
+Cada projeto permanece sujeito às suas respectivas licenças, direitos autorais e termos de distribuição.
 
-- **Winlator** — BrunoSX / brunodev85
-- **Wine** — WineHQ
-- **Box86 / Box64** — ptitSeb
-- **Mesa**
-- **Turnip**
-- **Panfrost / PanVK**
-- **DXVK**
-- **VKD3D**
-- **CNC DDraw**
-- **VirGL**
-- **Vortek**
-- **Termux / GLIBC patches and related projects**
+## Licença
 
-Additional components may have their own authors, licenses and attribution.
+O Vanta preserva os avisos de licença e atribuição exigidos pelos projetos dos quais deriva.
 
-All applicable upstream copyright notices, licenses and attribution must remain
-preserved.
+Código proveniente do Winlator e de outros projetos continua sujeito às respectivas licenças originais.
 
----
+Modificações específicas do Vanta devem ser identificadas separadamente quando aplicável.
 
-## 📜 License
+## Aviso
 
-Vanta preserves the licensing requirements and attribution of the upstream
-projects it uses.
+Vanta é um projeto independente.
 
-See the repository license, source files and third-party notices for additional
-licensing information.
+O projeto não possui afiliação oficial com Microsoft, WineHQ, Mesa, DXVK ou outros projetos mencionados, salvo quando explicitamente indicado pelos respectivos responsáveis.
 
-Contributors and community runtime-package developers are responsible for
-respecting the licenses of the components they distribute.
-
----
-
-## ⚠️ Disclaimer
-
-Vanta is an independent community project based on Winlator.
-
-Vanta is not affiliated with or endorsed by Microsoft.
-
-Windows is a trademark of Microsoft Corporation.
-
-Third-party projects mentioned in this repository belong to their respective
-developers and organizations.
-EOF
+Windows e outras marcas pertencem aos seus respectivos proprietários.
