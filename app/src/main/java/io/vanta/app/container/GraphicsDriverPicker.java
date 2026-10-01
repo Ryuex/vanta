@@ -7,6 +7,7 @@ import android.widget.LinearLayout;
 import io.vanta.app.contentdialog.TurnipConfigDialog;
 import io.vanta.app.contentdialog.VirGLConfigDialog;
 import io.vanta.app.contentdialog.VortekConfigDialog;
+import io.vanta.app.core.DefaultVersion;
 import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.StringUtils;
 import io.vanta.app.widget.TaggedSelectionBox;
@@ -54,6 +55,18 @@ public class GraphicsDriverPicker {
             graphicsDriverConfig.append(taggedSelectionBox.getTag().toString());
         }
         return graphicsDriverConfig.toString();
+    }
+
+    public void applyRecommendedDriver(String selectedGraphicsDriver) {
+        String[] identifiers = GraphicsDrivers.parseIdentifiers(selectedGraphicsDriver);
+        for (int i = 0; i < container.getChildCount(); i++) {
+            TaggedSelectionBox selectionBox = (TaggedSelectionBox)container.getChildAt(i);
+            String currentIdentifier = StringUtils.parseIdentifier(selectionBox.getSelectedItem());
+            KeyValueSet config = new KeyValueSet(currentIdentifier.equals(identifiers[i]) ? selectionBox.getTag() : "");
+            selectionBox.setSelectedItem(GraphicsDrivers.getName(identifiers[i]));
+            config.put("version", DefaultVersion.valueOf(identifiers[i]));
+            selectionBox.setTag(config.toString());
+        }
     }
 
     private static void showGraphicsDriverConfigDialog(String graphicsDriver, View anchor) {

@@ -5,6 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ScrollView
+        android:id="@+id/SettingsScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -18,9 +19,98 @@
                 style="@style/VantaSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="@string/graphics_driver_manager" />
+
+            <LinearLayout
+                android:id="@+id/GraphicsDriversManagerSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/graphics_driver_manager_description"
+                    android:textColor="?attr/colorSecondaryText"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/graphics_driver_backends"
+                    android:textColor="?attr/colorPrimaryVariant"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/LLGraphicsDriverBackends"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/turnip_packages"
+                    android:textColor="?attr/colorPrimaryVariant"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/LLTurnipManagerVersions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/component_package_to_manage" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/STurnipManagerVersion"
+                        style="@style/ComboBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <LinearLayout
+                        android:id="@+id/TurnipManagerToolbox"
+                        style="@style/Toolbox">
+
+                        <ImageButton
+                            style="@style/ListMenuButton"
+                            android:src="@drawable/icon_install"
+                            android:tag="install" />
+
+                        <ImageButton
+                            style="@style/ListMenuButton"
+                            android:layout_marginRight="0dp"
+                            android:src="@drawable/icon_remove"
+                            android:tag="remove" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="@string/dxvk_manager" />
 
             <LinearLayout
+                android:id="@+id/DXVKManagerSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/vanta_form_card"
@@ -241,6 +331,7 @@
             </FrameLayout>
 
             <FrameLayout
+                android:id="@+id/Box64SettingsSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 

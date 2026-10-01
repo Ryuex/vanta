@@ -5,8 +5,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ScrollView
+        android:id="@+id/ContainerDetailScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="48dp"
         android:clipToPadding="false"
         android:fillViewport="true">
 
@@ -20,6 +22,7 @@
             android:paddingBottom="96dp">
 
             <TextView
+                android:id="@+id/TVGeneralSection"
                 style="@style/VantaSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -119,6 +122,14 @@
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/BTRecommendedConfiguration"
+                style="@style/VantaSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/recommended_configuration" />
             </LinearLayout>
 
             <TextView
@@ -149,6 +160,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/TVGraphicsSection"
                 style="@style/VantaSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -197,6 +209,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/TVAudioSection"
                 style="@style/VantaSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -245,6 +258,7 @@
                 android:entries="@array/hud_mode_entries" />
 
             <TextView
+                android:id="@+id/TVAdvancedSection"
                 style="@style/VantaSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -259,7 +273,7 @@
                 android:background="@drawable/tab_layout_background"
                 app:tabTextColor="?attr/tabTextColor"
                 app:tabIndicatorColor="?attr/colorAccent"
-                app:tabRippleColor="#33a855f7"
+                app:tabRippleColor="@color/vanta_primary_ripple"
                 app:tabGravity="center"
                 app:tabMode="auto">
 
@@ -626,6 +640,77 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <HorizontalScrollView
+        android:id="@+id/ContainerSectionNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="?attr/colorPrimarySurface"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/BTSectionGeneral"
+                style="@style/VantaChip"
+                android:layout_width="wrap_content"
+                android:layout_weight="0"
+                android:layout_marginRight="6dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/section_general" />
+
+            <TextView
+                android:id="@+id/BTSectionGraphics"
+                style="@style/VantaChip"
+                android:layout_width="wrap_content"
+                android:layout_weight="0"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="3dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/section_graphics" />
+
+            <TextView
+                android:id="@+id/BTSectionCompatibility"
+                style="@style/VantaChip"
+                android:layout_width="wrap_content"
+                android:layout_weight="0"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="3dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/section_compatibility" />
+
+            <TextView
+                android:id="@+id/BTSectionAudio"
+                style="@style/VantaChip"
+                android:layout_width="wrap_content"
+                android:layout_weight="0"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="3dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/section_audio" />
+
+            <TextView
+                android:id="@+id/BTSectionAdvanced"
+                style="@style/VantaChip"
+                android:layout_width="wrap_content"
+                android:layout_weight="0"
+                android:layout_marginLeft="6dp"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp"
+                android:text="@string/section_advanced" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/BTConfirm"

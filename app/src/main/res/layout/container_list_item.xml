@@ -25,7 +25,7 @@
             android:contentDescription="@string/container"
             android:padding="12dp"
             android:src="@drawable/icon_container"
-            app:tint="#c4b5fd" />
+            app:tint="@color/vanta_primary_variant" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -90,7 +90,7 @@
             android:paddingLeft="18dp"
             android:paddingRight="18dp"
             android:text="@string/launch"
-            android:textColor="#ffffff"
+            android:textColor="@color/vanta_text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
 

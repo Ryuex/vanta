@@ -20,5 +20,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16dp"
-        android:textColor="#ffffff" />
+        android:textColor="@color/vanta_text_primary" />
 </LinearLayout>

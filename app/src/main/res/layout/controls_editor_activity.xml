@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:textColor="#ffffff"
+                android:textColor="@color/vanta_text_primary"
                 android:text="@string/profile" />
 
             <TextView

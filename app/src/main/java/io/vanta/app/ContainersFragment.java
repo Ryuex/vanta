@@ -3,8 +3,11 @@ package io.vanta.app;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -12,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -34,15 +38,28 @@ import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.PreloaderDialog;
 import io.vanta.app.core.WineInfo;
 import io.vanta.app.xenvironment.RootFS;
+import androidx.preference.PreferenceManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public class ContainersFragment extends Fragment {
+    private static final String FILTER_ALL = "all";
+    private static final String FILTER_FAVORITES = "favorites";
+    private static final String FILTER_RECENT = "recent";
     private RecyclerView recyclerView;
     private View emptyState;
     private ContainerManager manager;
     private PreloaderDialog preloaderDialog;
+    private SharedPreferences preferences;
+    private TextView emptyTitle;
+    private TextView emptyDescription;
+    private String activeFilter = FILTER_ALL;
+    private String searchQuery = "";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,15 +83,97 @@ public class ContainersFragment extends Fragment {
         recyclerView = view.findViewById(R.id.RecyclerView);
         Context context = recyclerView.getContext();
         emptyState = view.findViewById(R.id.TVEmptyText);
+        emptyTitle = view.findViewById(R.id.TVEmptyTitle);
+        emptyDescription = view.findViewById(R.id.TVEmptyDescription);
+        preferences = PreferenceManager.getDefaultSharedPreferences(context);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         view.findViewById(R.id.BTNewContainer).setOnClickListener((button) -> createContainer());
+        setFilter(view.findViewById(R.id.BTFilterAll), FILTER_ALL);
+        setFilter(view.findViewById(R.id.BTFilterFavorites), FILTER_FAVORITES);
+        setFilter(view.findViewById(R.id.BTFilterRecent), FILTER_RECENT);
+        EditText search = view.findViewById(R.id.ETSearchContainers);
+        search.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                searchQuery = text.toString().trim().toLowerCase(Locale.ROOT);
+                loadContainersList();
+            }
+
+            @Override
+            public void afterTextChanged(Editable text) {}
+        });
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (manager != null && recyclerView != null) loadContainersList();
+    }
+
+    private void setFilter(TextView view, String filter) {
+        view.setSelected(filter.equals(activeFilter));
+        view.setOnClickListener((button) -> {
+            activeFilter = filter;
+            View root = getView();
+            if (root != null) {
+                root.findViewById(R.id.BTFilterAll).setSelected(FILTER_ALL.equals(filter));
+                root.findViewById(R.id.BTFilterFavorites).setSelected(FILTER_FAVORITES.equals(filter));
+                root.findViewById(R.id.BTFilterRecent).setSelected(FILTER_RECENT.equals(filter));
+            }
+            loadContainersList();
+        });
+    }
+
     private void loadContainersList() {
-        ArrayList<Container> containers = manager.getContainers();
+        ArrayList<Container> allContainers = manager.getContainers();
+        Set<String> favorites = new HashSet<>(preferences.getStringSet("vanta_container_favorites", Collections.emptySet()));
+        ArrayList<Container> containers = new ArrayList<>();
+        for (Container container : allContainers) {
+            if (FILTER_FAVORITES.equals(activeFilter) && !favorites.contains(Integer.toString(container.id))) continue;
+            if (FILTER_RECENT.equals(activeFilter) && preferences.getLong(recentKey(container.id), 0L) == 0L) continue;
+            if (!searchQuery.isEmpty() && (container.getName() == null ||
+                    !container.getName().toLowerCase(Locale.ROOT).contains(searchQuery))) continue;
+            containers.add(container);
+        }
+        if (FILTER_RECENT.equals(activeFilter)) {
+            containers.sort((first, second) -> Long.compare(
+                    preferences.getLong(recentKey(second.id), 0L),
+                    preferences.getLong(recentKey(first.id), 0L)));
+        }
         recyclerView.setAdapter(new ContainersAdapter(containers));
-        emptyState.setVisibility(containers.isEmpty() ? View.VISIBLE : View.GONE);
+        boolean isEmpty = containers.isEmpty();
+        emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        if (isEmpty && !allContainers.isEmpty()) {
+            emptyTitle.setText(R.string.no_matching_containers_title);
+            int description = FILTER_FAVORITES.equals(activeFilter) ? R.string.no_favorite_containers :
+                    FILTER_RECENT.equals(activeFilter) ? R.string.no_recent_containers : R.string.no_matching_containers;
+            emptyDescription.setText(description);
+        }
+        else {
+            emptyTitle.setText(R.string.empty_containers_title);
+            emptyDescription.setText(R.string.empty_containers_description);
+        }
+    }
+
+    private static String recentKey(int containerId) {
+        return "vanta_container_recent_"+containerId;
+    }
+
+    private boolean isFavorite(Container container) {
+        return preferences.getStringSet("vanta_container_favorites", Collections.emptySet())
+                .contains(Integer.toString(container.id));
+    }
+
+    private void toggleFavorite(Container container) {
+        Set<String> favorites = new HashSet<>(preferences.getStringSet("vanta_container_favorites", Collections.emptySet()));
+        String id = Integer.toString(container.id);
+        if (!favorites.add(id)) favorites.remove(id);
+        preferences.edit().putStringSet("vanta_container_favorites", favorites).apply();
+        loadContainersList();
     }
 
     private void createContainer() {
@@ -170,9 +269,14 @@ public class ContainersFragment extends Fragment {
             PopupMenu listItemMenu = new PopupMenu(activity, anchorView);
             listItemMenu.inflate(R.menu.container_popup_menu);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) listItemMenu.setForceShowIcon(true);
+            listItemMenu.getMenu().findItem(R.id.menu_item_toggle_favorite).setTitle(
+                    isFavorite(container) ? R.string.remove_from_favorites : R.string.add_to_favorites);
 
             listItemMenu.setOnMenuItemClickListener((menuItem) -> {
                 switch (menuItem.getItemId()) {
+                    case R.id.menu_item_toggle_favorite:
+                        toggleFavorite(container);
+                        break;
                     case R.id.menu_item_file_manager:
                         activity.showFragment(new ContainerFileManagerFragment(container.id));
                         break;
@@ -207,6 +311,7 @@ public class ContainersFragment extends Fragment {
         }
 
         private void runContainer(Container container) {
+            preferences.edit().putLong(recentKey(container.id), System.currentTimeMillis()).apply();
             Activity activity = getActivity();
             Intent intent = new Intent(activity, XServerDisplayActivity.class);
             intent.putExtra("container_id", container.id);

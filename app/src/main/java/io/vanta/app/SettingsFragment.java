@@ -77,6 +77,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SettingsFragment extends Fragment {
+    public static final String SECTION_ARGUMENT = "settings_section";
+    public static final String SECTION_DXVK_MANAGER = "dxvk_manager";
+    public static final String SECTION_GRAPHICS_DRIVERS = "graphics_drivers";
+    public static final String SECTION_WINE_MANAGER = "wine_manager";
+    public static final String SECTION_BOX64 = "box64";
     public static final String DEFAULT_WINE_DEBUG_CHANNELS = "warn,err,fixme";
     public static final byte APP_THEME_LIGHT = 0;
     public static final byte APP_THEME_DARK = 1;
@@ -84,6 +89,14 @@ public class SettingsFragment extends Fragment {
     private PreloaderDialog preloaderDialog;
     private SharedPreferences preferences;
     private boolean midiDeviceCallbackRegistered = false;
+
+    public static SettingsFragment newInstance(String section) {
+        SettingsFragment fragment = new SettingsFragment();
+        Bundle arguments = new Bundle();
+        arguments.putString(SECTION_ARGUMENT, section);
+        fragment.setArguments(arguments);
+        return fragment;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -95,7 +108,12 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.settings);
+        String section = getArguments() != null ? getArguments().getString(SECTION_ARGUMENT) : null;
+        int title = SECTION_DXVK_MANAGER.equals(section) ? R.string.dxvk_manager :
+                SECTION_GRAPHICS_DRIVERS.equals(section) ? R.string.graphics_driver_manager :
+                SECTION_WINE_MANAGER.equals(section) ? R.string.wine_manager :
+                SECTION_BOX64.equals(section) ? R.string.box64_settings : R.string.settings;
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(title);
     }
 
     @Override
@@ -139,6 +157,13 @@ public class SettingsFragment extends Fragment {
         GeneralComponents.initViews(GeneralComponents.Type.DXVK, view.findViewById(R.id.DXVKManagerToolbox),
                 sDXVKManagerVersion, null, DefaultVersion.MAJOR_DXVK, refreshDXVKVersions);
         refreshDXVKVersions.run();
+
+        final Spinner sTurnipManagerVersion = view.findViewById(R.id.STurnipManagerVersion);
+        Runnable refreshTurnipVersions = () -> showTurnipManagerVersions(view);
+        GeneralComponents.initViews(GeneralComponents.Type.TURNIP, view.findViewById(R.id.TurnipManagerToolbox),
+                sTurnipManagerVersion, null, DefaultVersion.TURNIP, refreshTurnipVersions);
+        refreshTurnipVersions.run();
+        showGraphicsDriverBackends(view);
 
         final RadioGroup rgAppTheme = view.findViewById(R.id.RGAppTheme);
         final int oldAppThemeId = preferences.getInt("app_theme", APP_THEME_DARK) == APP_THEME_LIGHT ? R.id.RBLight : R.id.RBDark;
@@ -292,6 +317,24 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        String section = getArguments() != null ? getArguments().getString(SECTION_ARGUMENT) : null;
+        int targetId = SECTION_DXVK_MANAGER.equals(section) ? R.id.DXVKManagerSection :
+                SECTION_GRAPHICS_DRIVERS.equals(section) ? R.id.GraphicsDriversManagerSection :
+                SECTION_WINE_MANAGER.equals(section) ? R.id.LLWineInstallation :
+                SECTION_BOX64.equals(section) ? R.id.Box64SettingsSection : View.NO_ID;
+        if (targetId != View.NO_ID) {
+            View target = view.findViewById(targetId);
+            View scrollView = view.findViewById(R.id.SettingsScrollView);
+            view.post(() -> {
+                int targetTop = 0;
+                View current = target;
+                while (current != scrollView && current.getParent() instanceof View) {
+                    targetTop += current.getTop();
+                    current = (View)current.getParent();
+                }
+                ((android.widget.ScrollView)scrollView).smoothScrollTo(0, targetTop);
+            });
+        }
         return view;
     }
 
@@ -381,6 +424,78 @@ public class SettingsFragment extends Fragment {
             params.bottomMargin = (int)UnitUtils.dpToPx(6);
             rows.addView(row, params);
         }
+    }
+
+    private void showTurnipManagerVersions(View view) {
+        LinearLayout rows = view.findViewById(R.id.LLTurnipManagerVersions);
+        rows.removeAllViews();
+
+        String defaultDriver = GraphicsDrivers.parseIdentifiers(GraphicsDrivers.getDefaultDriver(getContext()))[0];
+        ArrayList<String> versions = GeneralComponents.getAvailableComponentNames(GeneralComponents.Type.TURNIP, getContext());
+        for (String version : versions) {
+            String source = getString(GeneralComponents.isBuiltinComponent(GeneralComponents.Type.TURNIP, version) ?
+                    R.string.component_package_bundled : R.string.component_package_imported);
+            int selectedContainers = getTurnipContainerUseCount(version);
+            int status = defaultDriver.equals(GraphicsDrivers.TURNIP) && version.equals(DefaultVersion.TURNIP) ?
+                    R.string.graphics_driver_version_default :
+                    R.string.graphics_driver_version_available;
+            TextView row = new TextView(getContext());
+            row.setText(getString(R.string.graphics_driver_turnip_row, version, source,
+                    getString(status), selectedContainers));
+            row.setPadding((int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(10),
+                    (int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(10));
+            row.setBackgroundResource(R.drawable.vanta_card_background);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.bottomMargin = (int)UnitUtils.dpToPx(6);
+            rows.addView(row, params);
+        }
+    }
+
+    private void showGraphicsDriverBackends(View view) {
+        LinearLayout rows = view.findViewById(R.id.LLGraphicsDriverBackends);
+        rows.removeAllViews();
+
+        Context context = getContext();
+        String[] defaultDrivers = GraphicsDrivers.parseIdentifiers(GraphicsDrivers.getDefaultDriver(context));
+        String[] drivers = {
+                GraphicsDrivers.TURNIP,
+                GraphicsDrivers.VORTEK,
+                GraphicsDrivers.ZINK,
+                GraphicsDrivers.VIRGL,
+                GraphicsDrivers.GLADIO
+        };
+        for (String driver : drivers) {
+            boolean isVulkan = GraphicsDrivers.isVulkanDriver(driver);
+            int index = isVulkan ? 0 : 1;
+            String status = driver.equals(defaultDrivers[index]) ?
+                    getString(R.string.graphics_driver_default_for_device) :
+                    getString(R.string.graphics_driver_available);
+            String api = getString(isVulkan ? R.string.vulkan : R.string.opengl);
+            TextView row = new TextView(context);
+            row.setText(getString(R.string.graphics_driver_backend_row,
+                    GraphicsDrivers.getName(driver), DefaultVersion.valueOf(driver), api, status));
+            row.setTextColor(AppUtils.getThemeColor(context, R.attr.colorPrimaryText));
+            row.setTextSize(13);
+            row.setPadding((int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(10),
+                    (int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(10));
+            row.setBackgroundResource(R.drawable.vanta_card_background);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.bottomMargin = (int)UnitUtils.dpToPx(6);
+            rows.addView(row, params);
+        }
+    }
+
+    private int getTurnipContainerUseCount(String version) {
+        int count = 0;
+        for (Container container : new ContainerManager(getContext()).getContainers()) {
+            String[] drivers = GraphicsDrivers.parseIdentifiers(container.getGraphicsDriver());
+            if (!GraphicsDrivers.TURNIP.equals(drivers[0])) continue;
+            KeyValueSet[] config = GraphicsDrivers.parseConfigs(container.getGraphicsDriver(), container.getGraphicsDriverConfig());
+            if (version.equals(config[0].get("version", DefaultVersion.TURNIP))) count++;
+        }
+        return count;
     }
 
     private int getDXVKContainerUseCount(String version) {

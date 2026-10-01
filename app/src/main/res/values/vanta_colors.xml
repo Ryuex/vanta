@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="vanta_background">#0E0D12</color>
+    <color name="vanta_surface">#18171F</color>
+    <color name="vanta_surface_elevated">#211E2A</color>
+    <color name="vanta_surface_selected">#302044</color>
+    <color name="vanta_primary">#7C3AED</color>
+    <color name="vanta_primary_variant">#A78BFA</color>
+    <color name="vanta_primary_ripple">#337C3AED</color>
+    <color name="vanta_border">#393343</color>
+    <color name="vanta_text_primary">#FAFAFA</color>
+    <color name="vanta_text_secondary">#B8B2C1</color>
+    <color name="vanta_text_disabled">#827C8B</color>
+    <color name="vanta_success">#4ADE80</color>
+    <color name="vanta_warning">#FBBF24</color>
+    <color name="vanta_error">#EF5350</color>
+    <color name="vanta_ripple">#55FFFFFF</color>
+</resources>

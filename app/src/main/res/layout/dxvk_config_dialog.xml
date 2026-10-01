@@ -9,6 +9,17 @@
         android:orientation="vertical">
 
         <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/recommended_configuration" />
+
+        <Spinner
+            style="@style/ComboBox"
+            android:id="@+id/SDXVKPreset"
+            android:layout_width="match_parent"
+            android:entries="@array/dxvk_preset_entries" />
+
+        <TextView
             android:id="@+id/TVDXVKVersionProfile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

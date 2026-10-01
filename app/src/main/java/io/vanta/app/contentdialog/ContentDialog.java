@@ -31,7 +31,7 @@ public class ContentDialog extends Dialog {
     }
 
     public ContentDialog(@NonNull Context context, int layoutResId) {
-        super(context, R.style.ContentDialog);
+        super(context, R.style.VantaDialog);
         contentView = LayoutInflater.from(context).inflate(R.layout.content_dialog, null);
 
         if (layoutResId > 0) {

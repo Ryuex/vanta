@@ -26,18 +26,58 @@
             app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
     </LinearLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:id="@+id/NavigationView"
-        android:fitsSystemWindows="true"
-        app:headerLayout="@layout/main_menu_header"
-        app:itemBackground="@drawable/vanta_selected_item"
-        app:itemHorizontalPadding="20dp"
-        app:itemIconPadding="18dp"
-        app:itemIconTint="?attr/colorAccent"
-        app:itemTextColor="?attr/colorPrimaryText"
         android:background="?attr/colorSecondarySurface"
-        app:menu="@menu/main_menu"/>
+        android:orientation="vertical">
+
+        <include layout="@layout/main_menu_header" />
+
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/NavigationView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="?attr/colorSecondarySurface"
+            android:fitsSystemWindows="true"
+            app:itemBackground="@drawable/vanta_selected_item"
+            app:itemHorizontalPadding="20dp"
+            app:itemIconPadding="18dp"
+            app:itemIconTint="?attr/colorAccent"
+            app:itemTextColor="?attr/colorPrimaryText"
+            app:menu="@menu/main_menu" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/vanta_border" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingTop="16dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/drawer_attribution"
+                android:textColor="@color/vanta_text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/drawer_community"
+                android:textColor="@color/vanta_text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

@@ -19,6 +19,7 @@ import io.vanta.app.widget.GPUCardAdapter;
 import io.vanta.app.xenvironment.RootFS;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class DXVKConfigDialog extends ContentDialog {
     public DXVKConfigDialog(String graphicsDriver, final View anchor) {
@@ -32,6 +33,7 @@ public class DXVKConfigDialog extends ContentDialog {
         final Spinner sMaxDeviceMemory = findViewById(R.id.SMaxDeviceMemory);
         final Spinner sCustomDevice = findViewById(R.id.SCustomDevice);
         final Spinner sDDrawWrapper = findViewById(R.id.SDDrawWrapper);
+        final Spinner sPreset = findViewById(R.id.SDXVKPreset);
         final TextView tvVersionProfile = findViewById(R.id.TVDXVKVersionProfile);
 
         KeyValueSet config = new KeyValueSet(anchor.getTag());
@@ -42,6 +44,8 @@ public class DXVKConfigDialog extends ContentDialog {
         String version = config.get("version");
         String defaultVersion = DefaultVersion.DXVK(graphicsDriver);
         GeneralComponents.initViews(GeneralComponents.Type.DXVK, findViewById(R.id.DXVKToolbox), sVersion, version, defaultVersion);
+        final String[] presetVersionSelection = {null};
+        final String[] presetFrameRateSelection = {null};
         Runnable updateVersionProfile = () -> {
             if (sVersion.getSelectedItem() == null) return;
             String selectedVersion = sVersion.getSelectedItem().toString();
@@ -53,12 +57,60 @@ public class DXVKConfigDialog extends ContentDialog {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 updateVersionProfile.run();
+                String selectedVersion = sVersion.getSelectedItem().toString();
+                if (selectedVersion.equals(presetVersionSelection[0])) presetVersionSelection[0] = null;
+                else if (sPreset.getSelectedItemPosition() != 0) sPreset.setSelection(0, false);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
         updateVersionProfile.run();
+
+        sPreset.setSelection(0, false);
+        sPreset.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) return;
+                String presetVersion = position == 1 ? DefaultVersion.MINOR_DXVK : defaultVersion;
+                ArrayList<String> availableVersions = GeneralComponents.getAvailableComponentNames(
+                        GeneralComponents.Type.DXVK, context);
+                if (availableVersions.contains(presetVersion)) {
+                    presetVersionSelection[0] = presetVersion;
+                    AppUtils.setSpinnerSelectionFromValue(sVersion, presetVersion);
+                }
+                else presetVersionSelection[0] = sVersion.getSelectedItem().toString();
+                String frameRate = position == 2 ? "60" : "0";
+                presetFrameRateSelection[0] = frameRate;
+                if (frameRate.equals("0")) sFramerate.setSelection(0, false);
+                else AppUtils.setSpinnerSelectionFromValue(sFramerate, frameRate);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        sFramerate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedFrameRate = StringUtils.parseNumber(sFramerate.getSelectedItem(), "0");
+                if (selectedFrameRate.equals(presetFrameRateSelection[0])) presetFrameRateSelection[0] = null;
+                else if (sPreset.getSelectedItemPosition() != 0) sPreset.setSelection(0, false);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        AdapterView.OnItemSelectedListener markPresetCustom = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (sPreset.getSelectedItemPosition() != 0) sPreset.setSelection(0, false);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        };
+        sMaxDeviceMemory.setOnItemSelectedListener(markPresetCustom);
+        sDDrawWrapper.setOnItemSelectedListener(markPresetCustom);
 
         GPUCardAdapter adapter = new GPUCardAdapter(context, android.R.layout.simple_spinner_dropdown_item, R.string.none);
         sCustomDevice.setAdapter(adapter);
@@ -71,6 +123,7 @@ public class DXVKConfigDialog extends ContentDialog {
             }
             catch (NumberFormatException e) {}
         }
+        sCustomDevice.setOnItemSelectedListener(markPresetCustom);
 
         setOnConfirmCallback(() -> {
             KeyValueSet newConfig = new KeyValueSet();

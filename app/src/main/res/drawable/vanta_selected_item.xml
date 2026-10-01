@@ -1,13 +1,13 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
         <shape android:shape="rectangle">
-            <solid android:color="#29213a" />
+            <solid android:color="@color/vanta_surface_selected" />
             <corners android:radius="12dp" />
         </shape>
     </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="#24202f" />
+            <solid android:color="@color/vanta_surface_elevated" />
             <corners android:radius="12dp" />
         </shape>
     </item>

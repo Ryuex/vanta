@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_item_toggle_favorite" android:title="@string/add_to_favorites" android:icon="@drawable/icon_popup_menu_add_favorite" android:iconTint="?attr/colorAccent" />
     <item android:id="@+id/menu_item_file_manager" android:title="@string/file_manager" android:icon="@drawable/icon_popup_menu_file_manager" android:iconTint="?attr/colorAccent" />
     <item android:id="@+id/menu_item_edit" android:title="@string/edit" android:icon="@drawable/icon_popup_menu_edit" android:iconTint="?attr/colorAccent" />
     <item android:id="@+id/menu_item_duplicate" android:title="@string/duplicate" android:icon="@drawable/icon_popup_menu_duplicate" android:iconTint="?attr/colorAccent" />

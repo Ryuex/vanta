@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.RadioGroup;
@@ -35,6 +36,7 @@ import io.vanta.app.box64.Box64PresetManager;
 import io.vanta.app.container.Container;
 import io.vanta.app.container.ContainerManager;
 import io.vanta.app.container.Drive;
+import io.vanta.app.container.DXWrappers;
 import io.vanta.app.container.GraphicsDrivers;
 import io.vanta.app.contentdialog.AddEnvVarDialog;
 import io.vanta.app.contentdialog.AudioDriverConfigDialog;
@@ -175,6 +177,45 @@ public class ContainerDetailFragment extends Fragment {
                 container.getBox64Version() : preferences.getString("box64_version", DefaultVersion.BOX64);
         GeneralComponents.loadVersionSpinner(GeneralComponents.Type.BOX64, sBox64Version, selectedBox64Version, DefaultVersion.BOX64);
 
+        view.findViewById(R.id.BTRecommendedConfiguration).setOnClickListener((button) -> {
+            String recommendedGraphicsDriver = GraphicsDrivers.getDefaultDriver(context);
+            String[] recommendedDrivers = GraphicsDrivers.parseIdentifiers(recommendedGraphicsDriver);
+            String recommendedDXVK = DefaultVersion.DXVK(recommendedDrivers[0]);
+            boolean hasRecommendedDXVK = GeneralComponents.getAvailableComponentNames(
+                    GeneralComponents.Type.DXVK, context).contains(recommendedDXVK);
+            String recommendedWrapper = hasRecommendedDXVK ? DXWrappers.DXVK : DXWrappers.WINED3D;
+            String recommendedDXVKLabel = hasRecommendedDXVK ? recommendedDXVK : getString(R.string.not_applicable);
+            String wineVersion = sWineVersion.getSelectedItem().toString();
+            String box64Preset = Box64PresetManager.getPreset(context, Box64Preset.STABILITY).name;
+            String box64Version = sBox64Version.getSelectedItem().toString();
+            String preview = getString(R.string.recommended_configuration_preview,
+                    GraphicsDrivers.getName(recommendedDrivers[0]),
+                    DefaultVersion.valueOf(recommendedDrivers[0]),
+                    GraphicsDrivers.getName(recommendedDrivers[1]),
+                    DefaultVersion.valueOf(recommendedDrivers[1]),
+                    DXWrappers.getName(recommendedWrapper),
+                    recommendedDXVKLabel,
+                    wineVersion,
+                    box64Preset,
+                    box64Version,
+                    Container.DEFAULT_SCREEN_SIZE,
+                    getString(R.string.off));
+
+            ContentDialog dialog = new ContentDialog(context, R.layout.recommended_configuration_preview);
+            dialog.setIcon(R.drawable.icon_display_settings);
+            dialog.setTitle(R.string.recommended_configuration);
+            dialog.setMessage(R.string.recommended_configuration_note);
+            ((TextView)dialog.findViewById(R.id.TVRecommendedConfigurationPreview)).setText(preview);
+            dialog.setOnConfirmCallback(() -> {
+                graphicsDriverPicker.applyRecommendedDriver(recommendedGraphicsDriver);
+                if (hasRecommendedDXVK) dxwrapperPicker.applyRecommendedDXVK(recommendedDrivers[0]);
+                else dxwrapperPicker.applyRecommendedWineD3D();
+                loadScreenSizeSpinner(view, Container.DEFAULT_SCREEN_SIZE);
+                Box64PresetManager.loadSpinner(sBox64Preset, Box64Preset.STABILITY);
+            });
+            dialog.show();
+        });
+
         final CPUListView cpuListView = view.findViewById(R.id.CPUListView);
         final CPUListView cpuListViewWoW64 = view.findViewById(R.id.CPUListViewWoW64);
 
@@ -189,6 +230,7 @@ public class ContainerDetailFragment extends Fragment {
         AppUtils.setupTabLayout(view, R.id.TabLayout, (tabResId) -> {
             if (tabResId == R.id.LLTabAdvanced) if ((byte)sWinVersion.getTag() == -1) WinVersions.loadSpinner(container, sWinVersion);
         }, R.id.LLTabWineConfiguration, R.id.LLTabWinComponents, R.id.LLTabEnvVars, R.id.LLTabDrives, R.id.LLTabAdvanced);
+        setupSectionNavigation(view);
 
         view.findViewById(R.id.BTConfirm).setOnClickListener((v) -> {
             try {
@@ -278,6 +320,64 @@ public class ContainerDetailFragment extends Fragment {
             catch (JSONException e) {}
         });
         return view;
+    }
+
+    private void setupSectionNavigation(View root) {
+        int[] tabIds = {
+                R.id.BTSectionGeneral,
+                R.id.BTSectionGraphics,
+                R.id.BTSectionCompatibility,
+                R.id.BTSectionAudio,
+                R.id.BTSectionAdvanced
+        };
+        int[] targetIds = {
+                R.id.TVGeneralSection,
+                R.id.TVGraphicsSection,
+                R.id.TVCompatibilitySection,
+                R.id.TVAudioSection,
+                R.id.TVAdvancedSection
+        };
+        android.widget.ScrollView scrollView = root.findViewById(R.id.ContainerDetailScrollView);
+        HorizontalScrollView navigation = root.findViewById(R.id.ContainerSectionNavigation);
+        int[] requestedIndex = {-1};
+        for (int i = 0; i < tabIds.length; i++) {
+            final int selectedIndex = i;
+            final View target = root.findViewById(targetIds[i]);
+            root.findViewById(tabIds[i]).setOnClickListener((tab) -> {
+                boolean alreadyAtTarget = Math.abs(scrollView.getScrollY()-target.getTop()) <=
+                        (int)io.vanta.app.core.UnitUtils.dpToPx(64);
+                requestedIndex[0] = alreadyAtTarget ? -1 : selectedIndex;
+                for (int j = 0; j < tabIds.length; j++) {
+                    root.findViewById(tabIds[j]).setSelected(j == selectedIndex);
+                }
+                if (!alreadyAtTarget) scrollView.smoothScrollTo(0, target.getTop());
+            });
+        }
+        scrollView.setOnScrollChangeListener((scroll, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            int activeIndex = 0;
+            int position = scrollY+(int)io.vanta.app.core.UnitUtils.dpToPx(64);
+            for (int i = 1; i < targetIds.length; i++) {
+                if (root.findViewById(targetIds[i]).getTop() <= position) activeIndex = i;
+                else break;
+            }
+            if (requestedIndex[0] >= 0) {
+                int requestedTop = root.findViewById(targetIds[requestedIndex[0]]).getTop();
+                if (Math.abs(scrollY-requestedTop) <= (int)io.vanta.app.core.UnitUtils.dpToPx(64)) {
+                    requestedIndex[0] = -1;
+                }
+                else activeIndex = requestedIndex[0];
+            }
+            for (int i = 0; i < tabIds.length; i++) {
+                View tab = root.findViewById(tabIds[i]);
+                boolean selected = i == activeIndex;
+                boolean wasSelected = tab.isSelected();
+                if (wasSelected != selected) tab.setSelected(selected);
+                if (selected && !wasSelected && requestedIndex[0] == -1) {
+                    navigation.smoothScrollTo(Math.max(0, tab.getLeft()-16), 0);
+                }
+            }
+        });
+        root.findViewById(tabIds[0]).setSelected(true);
     }
 
     private void saveWineRegistryKeys(View view) {

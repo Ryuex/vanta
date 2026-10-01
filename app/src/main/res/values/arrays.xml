@@ -62,6 +62,12 @@
         <item>60</item>
         <item>120</item>
     </string-array>
+    <string-array name="dxvk_preset_entries">
+        <item>@string/dxvk_preset_custom</item>
+        <item>@string/dxvk_preset_legacy</item>
+        <item>@string/dxvk_preset_balanced</item>
+        <item>@string/dxvk_preset_performance</item>
+    </string-array>
     <string-array name="ddraw_wrapper_entries">
         <item>WineD3D</item>
         <item>CNC DDraw</item>

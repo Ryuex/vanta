@@ -7,6 +7,7 @@ import android.widget.LinearLayout;
 import io.vanta.app.contentdialog.DXVKConfigDialog;
 import io.vanta.app.contentdialog.VKD3DConfigDialog;
 import io.vanta.app.contentdialog.WineD3DConfigDialog;
+import io.vanta.app.core.DefaultVersion;
 import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.StringUtils;
 import io.vanta.app.widget.TaggedSelectionBox;
@@ -68,6 +69,24 @@ public class DXWrapperPicker {
             dxwrapperConfig.append(taggedSelectionBox.getTag().toString());
         }
         return dxwrapperConfig.toString();
+    }
+
+    public void applyRecommendedDXVK(String graphicsDriver) {
+        TaggedSelectionBox direct3D = (TaggedSelectionBox)container.getChildAt(0);
+        direct3D.setSelectedItem(DXWrappers.getName(DXWrappers.DXVK));
+
+        KeyValueSet[] configs = DXWrappers.parseConfigs(DXWrappers.DXVK, getDXWrapperConfig());
+        configs[0].put("version", DefaultVersion.DXVK(graphicsDriver));
+        configs[0].put("framerate", "0");
+        direct3D.setTag(configs[0].toString());
+    }
+
+    public void applyRecommendedWineD3D() {
+        TaggedSelectionBox direct3D = (TaggedSelectionBox)container.getChildAt(0);
+        direct3D.setSelectedItem(DXWrappers.getName(DXWrappers.WINED3D));
+        KeyValueSet[] configs = DXWrappers.parseConfigs(DXWrappers.WINED3D, getDXWrapperConfig());
+        configs[0].put("version", DefaultVersion.WINED3D);
+        direct3D.setTag(configs[0].toString());
     }
 
     private static void showDXWrapperConfigDialog(String dxwrapper, String graphicsDriver, View anchor) {
