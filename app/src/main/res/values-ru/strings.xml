@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Winlator</string>
+    <string name="app_name">Vanta</string>
     <string name="run">Запустить</string>
     <string name="edit">Редактировать</string>
     <string name="remove">Удалить</string>
@@ -292,11 +292,24 @@
     <string name="full">Полный</string>
     <string name="renderer">Рендерер</string>
     <string name="default_no_override">Стандартный (без замены)</string>
-    <string name="fgs_notification_channel_desc">Поддерживает работу Winlator в фоновом режиме, чтобы приостановленная сессия Wine не прерывалась управлением фоновыми процессами Android.</string>
+    <string name="fgs_notification_channel_desc">Поддерживает работу Vanta в фоновом режиме, чтобы приостановленная сессия Wine не прерывалась управлением фоновыми процессами Android.</string>
     <string name="fgs_notification_content_container_background">Сессия контейнера приостановлена в фоновом режиме</string>
     <string name="fgs_notification_content_container_foreground">Запущен контейнерный сеанс</string>
-    <string name="fgs_notification_content_else">Winlator работает в фоновом режиме</string>
+    <string name="fgs_notification_content_else">Vanta работает в фоновом режиме</string>
     <string name="enable_background_wakelock">Включить wakelock, когда устройство заблокировано</string>
     <string name="save_mem_on_run_from_steam">Экономия памяти при запуске из Steam</string>
     <string name="present_mode">Режим презентации</string>
+    <string name="startup_preparing_runtime">Подготовка среды выполнения</string>
+    <string name="startup_preparing_container">Подготовка контейнера</string>
+    <string name="startup_extracting_rootfs">Извлечение rootfs</string>
+    <string name="startup_starting_xserver">Запуск XServer</string>
+    <string name="startup_starting_wine">Запуск Wine</string>
+    <string name="startup_running">Работает</string>
+    <string name="startup_error">Ошибка запуска</string>
+    <string name="startup_failed_at">Запуск контейнера был прерван на этапе:\n\n%1$s</string>
+    <string name="startup_error_details">Подробнее записаны в журнал. Включите «Включить логи» и логи Box64/Wine в настройках, чтобы увидеть полный вывод гостевого процесса.</string>
+    <string name="guest_process_not_started">Гостевой процесс (Box64/Wine) не удалось запустить.</string>
+    <string name="startup_taking_long">Контейнер запускается дольше, чем ожидалось.\n\nЭтап: %1$s\nПрошло времени: %2$d мин</string>
+    <string name="startup_keep_waiting">Ждать дальше</string>
+    <string name="startup_exit">Выйти</string>
 </resources>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Winlator</string>
+    <string name="app_name">Vanta</string>
     <string name="run">Run</string>
     <string name="edit">Edit</string>
     <string name="remove">Remove</string>
@@ -352,10 +352,23 @@
     <string name="ddraw_wrapper" translatable="false">DDraw Wrapper</string>
     <string name="renderer">Renderer</string>
     <string name="default_no_override">Default (No override)</string>
-    <string name="fgs_notification_channel_desc">Keeps Winlator running in the background so a wine session is not interrupted by Android\'s background process management.</string>
+    <string name="fgs_notification_channel_desc">Keeps Vanta running in the background so a wine session is not interrupted by Android\'s background process management.</string>
     <string name="fgs_notification_content_container_background">A container session is running in the background</string>
     <string name="fgs_notification_content_container_foreground">There is a container session running</string>
-    <string name="fgs_notification_content_else">Winlator is running in the background</string>
+    <string name="fgs_notification_content_else">Vanta is running in the background</string>
     <string name="save_mem_on_run_from_steam">Save memory on run from Steam</string>
     <string name="present_mode">Present Mode</string>
+    <string name="startup_preparing_runtime">Preparing runtime</string>
+    <string name="startup_preparing_container">Preparing container</string>
+    <string name="startup_extracting_rootfs">Extracting rootfs</string>
+    <string name="startup_starting_xserver">Starting XServer</string>
+    <string name="startup_starting_wine">Starting Wine</string>
+    <string name="startup_running">Running</string>
+    <string name="startup_error">Startup error</string>
+    <string name="startup_failed_at">The container startup was interrupted at the following stage:\n\n%1$s</string>
+    <string name="startup_error_details">Details were written to the log. Enable the logs in Settings to see the full output of the guest process.</string>
+    <string name="guest_process_not_started">The guest process (Box64/Wine) could not be started.</string>
+    <string name="startup_taking_long">The container is taking longer than expected to start.\n\nStage: %1$s\nElapsed: %2$d min</string>
+    <string name="startup_keep_waiting">Keep waiting</string>
+    <string name="startup_exit">Exit</string>
 </resources>

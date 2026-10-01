@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Winlator</string>
+    <string name="app_name">Vanta</string>
     <string name="run">Executar</string>
     <string name="edit">Editar</string>
     <string name="remove">Remover</string>
@@ -292,11 +292,24 @@
     <string name="full">Completo</string>
     <string name="renderer">Renderizador</string>
     <string name="default_no_override">Padrão (Sem sobrescrita)</string>
-    <string name="fgs_notification_channel_desc">Mantém o Winlator em execução em segundo plano para que uma sessão do Wine não seja interrompida pelo gerenciamento de processos em segundo plano do Android.</string>
+    <string name="fgs_notification_channel_desc">Mantém o Vanta em execução em segundo plano para que uma sessão do Wine não seja interrompida pelo gerenciamento de processos em segundo plano do Android.</string>
     <string name="fgs_notification_content_container_background">A sessão do container está pausada em segundo plano</string>
     <string name="fgs_notification_content_container_foreground">Há uma sessão de container em execução</string>
-    <string name="fgs_notification_content_else">O Winlator está executando em segundo plano</string>
+    <string name="fgs_notification_content_else">O Vanta está executando em segundo plano</string>
     <string name="enable_background_wakelock">Ativar wakelock quando o dispositivo está bloqueado</string>
     <string name="save_mem_on_run_from_steam">Economize memória ao executar a partir do Steam</string>
     <string name="present_mode">Modo de Apresentação</string>
+    <string name="startup_preparing_runtime">Preparando o runtime</string>
+    <string name="startup_preparing_container">Preparando o container</string>
+    <string name="startup_extracting_rootfs">Extraindo o rootfs</string>
+    <string name="startup_starting_xserver">Iniciando o XServer</string>
+    <string name="startup_starting_wine">Iniciando o Wine</string>
+    <string name="startup_running">Em execução</string>
+    <string name="startup_error">Erro de inicialização</string>
+    <string name="startup_failed_at">A inicialização do container foi interrompida na seguinte etapa:\n\n%1$s</string>
+    <string name="startup_error_details">Os detalhes foram gravados no log. Ative \"Ativar logs\" e os logs do Box64/Wine nas Configurações para ver a saída completa do processo convidado.</string>
+    <string name="guest_process_not_started">O processo convidado (Box64/Wine) não pôde ser iniciado.</string>
+    <string name="startup_taking_long">O container está demorando mais que o esperado para iniciar.\n\nEtapa: %1$s\nTempo: %2$d min</string>
+    <string name="startup_keep_waiting">Aguardar mais</string>
+    <string name="startup_exit">Sair</string>
 </resources>
