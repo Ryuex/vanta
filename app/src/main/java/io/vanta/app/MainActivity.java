@@ -156,8 +156,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem) {
         int itemId = menuItem.getItemId();
-        if (itemId == R.id.menu_item_add ||
-            itemId == R.id.menu_item_home ||
+        if (itemId == R.id.menu_item_home ||
             itemId == R.id.menu_item_view_style ||
             itemId == R.id.menu_item_new_folder) {
             return super.onOptionsItemSelected(menuItem);
@@ -197,14 +196,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.menu_item_input_controls:
                 showFragment(new InputControlsFragment(selectedProfileId));
                 break;
-            case R.id.menu_item_wine_manager:
-                showFragment(SettingsFragment.newInstance(SettingsFragment.SECTION_WINE_MANAGER));
-                break;
-            case R.id.menu_item_dxvk_manager:
-                showFragment(SettingsFragment.newInstance(SettingsFragment.SECTION_DXVK_MANAGER));
-                break;
-            case R.id.menu_item_graphics_drivers:
-                showFragment(SettingsFragment.newInstance(SettingsFragment.SECTION_GRAPHICS_DRIVERS));
+            case R.id.menu_item_runtime_manager:
+                showFragment(SettingsFragment.newInstance(SettingsFragment.SECTION_RUNTIME_MANAGER));
                 break;
             case R.id.menu_item_box64_settings:
                 showFragment(SettingsFragment.newInstance(SettingsFragment.SECTION_BOX64));

@@ -56,8 +56,7 @@ public abstract class HttpUtils {
                 while ((bytesRead = inStream.read(buffer)) != -1 && !interruptRef.get()) {
                     totalSize += bytesRead;
                     if (onPublishProgress != null) {
-                        int progress = (int)(((float)totalSize / contentLength) * 100);
-                        onPublishProgress.call(progress);
+                        onPublishProgress.call(contentLength > 0 ? (int)(((float)totalSize / contentLength) * 100) : -1);
                     }
                     outStream.write(buffer, 0, bytesRead);
                 }
@@ -72,9 +71,15 @@ public abstract class HttpUtils {
     }
 
     public static void download(final Activity activity, final String url, final File destination, final Callback<Boolean> onDownloadComplete) {
+        download(activity, url, destination, null, onDownloadComplete);
+    }
+
+    public static void download(final Activity activity, final String url, final File destination, final String title,
+                                final Callback<Boolean> onDownloadComplete) {
         final DownloadProgressDialog dialog = new DownloadProgressDialog(activity);
         final AtomicBoolean interruptRef = new AtomicBoolean();
-        dialog.show(() -> interruptRef.set(true));
+        if (title == null) dialog.show(() -> interruptRef.set(true));
+        else dialog.show(title, () -> interruptRef.set(true));
         Executors.newSingleThreadExecutor().execute(() -> {
             downloadAsync(url, destination, interruptRef, (progress) -> {
                 activity.runOnUiThread(() -> {

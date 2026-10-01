@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <stdio.h>
 
 #define VK_NO_PROTOTYPES 1
 #include <vulkan/vulkan.h>
@@ -59,6 +60,152 @@ done:
     if (!stringArray) stringArray = (*env)->NewObjectArray(env, 0, (*env)->FindClass(env, "java/lang/String"), 0);
     if (libvulkan) dlclose(libvulkan);
     return stringArray;
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_io_vanta_app_core_GPUHelper_vkGetPhysicalDeviceDetails(JNIEnv *env, jclass obj) {
+    void* libvulkan = dlopen(LIBVULKAN_PATH, RTLD_NOW | RTLD_LOCAL);
+    jobjectArray resultArray = NULL;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkExtensionProperties* extensions = NULL;
+    uint32_t extensionCount = 0;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+    if (!libvulkan) goto done;
+
+    PFN_vkCreateInstance vkCreateInstance = dlsym(libvulkan, "vkCreateInstance");
+    PFN_vkDestroyInstance vkDestroyInstance = dlsym(libvulkan, "vkDestroyInstance");
+    PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = dlsym(libvulkan, "vkEnumeratePhysicalDevices");
+    PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = dlsym(libvulkan, "vkGetPhysicalDeviceProperties");
+    PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties = dlsym(libvulkan, "vkEnumerateDeviceExtensionProperties");
+    PFN_vkGetPhysicalDeviceFeatures vkGetPhysicalDeviceFeatures = dlsym(libvulkan, "vkGetPhysicalDeviceFeatures");
+    PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = dlsym(libvulkan, "vkGetPhysicalDeviceMemoryProperties");
+    PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties = dlsym(libvulkan, "vkGetPhysicalDeviceFormatProperties");
+    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = dlsym(libvulkan, "vkGetPhysicalDeviceProperties2");
+    if (!vkGetPhysicalDeviceProperties2) {
+        vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(libvulkan, "vkGetPhysicalDeviceProperties2KHR");
+    }
+    if (!vkCreateInstance || !vkDestroyInstance || !vkEnumeratePhysicalDevices ||
+        !vkGetPhysicalDeviceProperties || !vkEnumerateDeviceExtensionProperties) goto done;
+
+    VkInstanceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    if (vkCreateInstance(&createInfo, NULL, &instance) != VK_SUCCESS) goto done;
+
+    uint32_t physicalDeviceCount = 0;
+    if (vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, NULL) != VK_SUCCESS ||
+        physicalDeviceCount == 0) goto done;
+    VkPhysicalDevice* physicalDevices = calloc(physicalDeviceCount, sizeof(VkPhysicalDevice));
+    if (!physicalDevices) goto done;
+    VkResult enumerateResult = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices);
+    if (enumerateResult != VK_SUCCESS && enumerateResult != VK_INCOMPLETE) {
+        free(physicalDevices);
+        goto done;
+    }
+    physicalDevice = physicalDevices[0];
+    free(physicalDevices);
+
+    VkPhysicalDeviceProperties properties = {0};
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+    if (vkEnumerateDeviceExtensionProperties(physicalDevice, NULL, &extensionCount, NULL) != VK_SUCCESS) {
+        extensionCount = 0;
+    }
+    if (extensionCount > 0) {
+        extensions = calloc(extensionCount, sizeof(VkExtensionProperties));
+        if (!extensions || vkEnumerateDeviceExtensionProperties(physicalDevice, NULL, &extensionCount, extensions) != VK_SUCCESS) {
+            free(extensions);
+            extensions = NULL;
+            extensionCount = 0;
+        }
+    }
+
+    VkPhysicalDeviceDriverProperties driverProperties = {0};
+    driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    bool hasDriverProperties = false;
+    for (uint32_t i = 0; i < extensionCount; i++) {
+        if (strcmp(extensions[i].extensionName, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME) == 0) {
+            hasDriverProperties = true;
+            break;
+        }
+    }
+    if (hasDriverProperties && vkGetPhysicalDeviceProperties2) {
+        properties2.pNext = &driverProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &properties2);
+    }
+
+    VkPhysicalDeviceFeatures features = {0};
+    if (vkGetPhysicalDeviceFeatures) vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+    VkPhysicalDeviceMemoryProperties memoryProperties = {0};
+    if (vkGetPhysicalDeviceMemoryProperties) vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+    uint64_t deviceLocalMemory = 0;
+    for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; i++) {
+        if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+            deviceLocalMemory += memoryProperties.memoryHeaps[i].size;
+        }
+    }
+
+    const VkFormat formats[] = {
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
+        VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
+        VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+        VK_FORMAT_BC3_UNORM_BLOCK,
+        VK_FORMAT_BC7_UNORM_BLOCK
+    };
+    const char* formatNames[] = {"rgba8", "etc2_rgb8", "astc_4x4", "bc1_rgba", "bc3", "bc7"};
+    const uint32_t fixedFieldCount = 13;
+    const uint32_t formatCount = sizeof(formats) / sizeof(formats[0]);
+    uint32_t arrayCount = fixedFieldCount + extensionCount + formatCount;
+    resultArray = (*env)->NewObjectArray(env, arrayCount, (*env)->FindClass(env, "java/lang/String"), NULL);
+    if (!resultArray) goto done;
+
+    uint32_t index = 0;
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, properties.deviceName));
+    char value[96];
+    snprintf(value, sizeof(value), "%u", properties.vendorID);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    snprintf(value, sizeof(value), "%u", properties.deviceID);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    snprintf(value, sizeof(value), "%u", properties.apiVersion);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    snprintf(value, sizeof(value), "%u", properties.driverVersion);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, hasDriverProperties ? driverProperties.driverName : ""));
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, hasDriverProperties ? driverProperties.driverInfo : ""));
+    snprintf(value, sizeof(value), "%u", hasDriverProperties ? driverProperties.driverID : 0);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    snprintf(value, sizeof(value), "%llu", (unsigned long long)deviceLocalMemory);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, features.textureCompressionBC ? "true" : "false"));
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, features.textureCompressionETC2 ? "true" : "false"));
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, features.textureCompressionASTC_LDR ? "true" : "false"));
+    snprintf(value, sizeof(value), "%u", extensionCount);
+    (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+
+    for (uint32_t i = 0; i < extensionCount; i++) {
+        (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, extensions[i].extensionName));
+    }
+    for (uint32_t i = 0; i < formatCount; i++) {
+        VkFormatProperties formatProperties = {0};
+        if (vkGetPhysicalDeviceFormatProperties) {
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, formats[i], &formatProperties);
+        }
+        snprintf(value, sizeof(value), "%s:%u", formatNames[i], formatProperties.optimalTilingFeatures);
+        (*env)->SetObjectArrayElement(env, resultArray, index++, (*env)->NewStringUTF(env, value));
+    }
+
+done:
+    if (instance) {
+        PFN_vkDestroyInstance vkDestroyInstance = dlsym(libvulkan, "vkDestroyInstance");
+        if (vkDestroyInstance) vkDestroyInstance(instance, NULL);
+    }
+    free(extensions);
+    if (libvulkan) dlclose(libvulkan);
+    if (!resultArray) resultArray = (*env)->NewObjectArray(env, 0, (*env)->FindClass(env, "java/lang/String"), NULL);
+    return resultArray;
 }
 
 JNIEXPORT jint JNICALL

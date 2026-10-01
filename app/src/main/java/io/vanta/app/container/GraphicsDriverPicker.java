@@ -57,6 +57,22 @@ public class GraphicsDriverPicker {
         return graphicsDriverConfig.toString();
     }
 
+    public void setVulkanDriver(String driver) {
+        TaggedSelectionBox vulkanSelection = (TaggedSelectionBox)container.getChildAt(0);
+        if (StringUtils.parseIdentifier(vulkanSelection.getSelectedItem()).equals(driver)) return;
+        KeyValueSet config = new KeyValueSet(vulkanSelection.getTag());
+        vulkanSelection.setSelectedItem(GraphicsDrivers.getName(driver));
+        config.put("version", DefaultVersion.valueOf(driver));
+        vulkanSelection.setTag(config.toString());
+    }
+
+    public void setVulkanConfigValue(String key, String value) {
+        TaggedSelectionBox vulkanSelection = (TaggedSelectionBox)container.getChildAt(0);
+        KeyValueSet config = new KeyValueSet(vulkanSelection.getTag());
+        config.put(key, value);
+        vulkanSelection.setTag(config.toString());
+    }
+
     public void applyRecommendedDriver(String selectedGraphicsDriver) {
         String[] identifiers = GraphicsDrivers.parseIdentifiers(selectedGraphicsDriver);
         for (int i = 0; i < container.getChildCount(); i++) {

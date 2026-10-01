@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <dlfcn.h>
 #include <libgen.h>
 #include <sys/stat.h>
 
@@ -12,6 +13,7 @@
 
 VulkanWrapper vulkanWrapper = {0};
 bool vortekSerializerCastVkObject = true;
+static jint activeVulkanLibraryStatus;
 
 static void* openVulkanLibrary(JNIEnv* env, jstring nativeLibraryDir, jstring libvulkanPath) {
     void* libvulkan;
@@ -39,6 +41,13 @@ static void* openVulkanLibrary(JNIEnv* env, jstring nativeLibraryDir, jstring li
     return libvulkan;
 }
 
+static bool hasRequiredVulkanEntryPoints(void* libvulkan) {
+    return libvulkan &&
+           dlsym(libvulkan, "vkCreateInstance") &&
+           dlsym(libvulkan, "vkGetInstanceProcAddr") &&
+           dlsym(libvulkan, "vkGetDeviceProcAddr");
+}
+
 JNIEXPORT jlong JNICALL
 Java_io_vanta_app_xenvironment_components_VortekRendererComponent_createVkContext(JNIEnv *env,
                                                                                   jobject obj,
@@ -61,7 +70,22 @@ Java_io_vanta_app_xenvironment_components_VortekRendererComponent_initVulkanWrap
                                                                                     jstring nativeLibraryDir,
                                                                                     jstring libvulkanPath) {
     void* libvulkan = openVulkanLibrary(env, nativeLibraryDir, libvulkanPath);
+    bool customRequested = libvulkanPath != NULL;
+    bool customLoaded = customRequested && hasRequiredVulkanEntryPoints(libvulkan);
+    if (customRequested && !hasRequiredVulkanEntryPoints(libvulkan)) {
+        println("vortek: custom Vulkan library is unusable; falling back to the system driver");
+        if (libvulkan) dlclose(libvulkan);
+        libvulkan = dlopen(LIBVULKAN_PATH, RTLD_NOW | RTLD_LOCAL);
+        if (!libvulkan) println("vortek: unable to open system libvulkan: %s", dlerror());
+    }
+    activeVulkanLibraryStatus = hasRequiredVulkanEntryPoints(libvulkan) ? (customLoaded ? 2 : 1) : 0;
     initVulkanWrapper(&vulkanWrapper, libvulkan);
+}
+
+JNIEXPORT jint JNICALL
+Java_io_vanta_app_xenvironment_components_VortekRendererComponent_getVulkanLibraryStatus(JNIEnv *env,
+                                                                                         jobject obj) {
+    return activeVulkanLibraryStatus;
 }
 
 JNIEXPORT jboolean JNICALL

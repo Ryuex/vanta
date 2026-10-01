@@ -2,9 +2,11 @@ package io.vanta.app.contentdialog;
 
 import android.content.Context;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import io.vanta.app.R;
 import io.vanta.app.container.DXWrappers;
@@ -37,6 +39,24 @@ public class WineD3DConfigDialog extends ContentDialog {
         GeneralComponents.initViews(GeneralComponents.Type.WINED3D, findViewById(R.id.WineD3DToolbox), sVersion, version, DefaultVersion.WINED3D);
 
         AppUtils.setSpinnerSelectionFromIdentifier(sDDrawWrapper, config.get("ddrawWrapper", DXWrappers.WINED3D));
+        final TextView ddrawDescription = findViewById(R.id.TVDDrawWrapperInfo);
+        Runnable updateDDrawDescription = () -> {
+            String wrapper = StringUtils.parseIdentifier(sDDrawWrapper.getSelectedItem());
+            int description = wrapper.equals(DXWrappers.CNC_DDRAW) ? R.string.ddraw_cnc_description :
+                    wrapper.equals(DXWrappers.D7VK) ? R.string.ddraw_d7vk_description :
+                    R.string.ddraw_wined3d_description;
+            ddrawDescription.setText(description);
+        };
+        updateDDrawDescription.run();
+        sDDrawWrapper.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateDDrawDescription.run();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
         AppUtils.setSpinnerSelectionFromIdentifier(sRenderer, config.get("renderer", "gl"));
 
         final CheckBox cbCSMT = findViewById(R.id.CBCSMT);

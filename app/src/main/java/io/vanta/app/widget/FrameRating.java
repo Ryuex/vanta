@@ -14,6 +14,7 @@ import io.vanta.app.R;
 import io.vanta.app.box64.Box64Utils;
 import io.vanta.app.core.CPUStatus;
 import io.vanta.app.core.StringUtils;
+import io.vanta.app.core.ThermalGuard;
 
 import java.util.Locale;
 
@@ -26,11 +27,25 @@ public class FrameRating extends FrameLayout implements Runnable {
     private final LinearLayout gpuPanel;
     private final LinearLayout ramPanel;
     private final LinearLayout cpuPanel;
+    private final TextView completeTelemetry;
     private Mode mode = Mode.SIMPLE;
     private ActivityManager activityManager;
     private ActivityManager.MemoryInfo memoryInfo;
     private String cpuInfo = null;
     private byte tick = 0;
+    private String resolution = "";
+    private String fpsLimit = "";
+    private String performancePolicy = "";
+    private String gpuBackend = "";
+    private String dxWrapper = "";
+    private String wineVersion = "";
+    private String box64Version = "";
+    private String wrapperIdentity;
+    private String wrapperBackend;
+    private String maliProfile;
+    private String thermalStatus;
+    private String selectedVulkanDriver;
+    private String loadedVulkanLibrary;
 
     public FrameRating(Context context) {
         this(context, null);
@@ -48,6 +63,7 @@ public class FrameRating extends FrameLayout implements Runnable {
         gpuPanel = view.findViewById(R.id.LLGPUPanel);
         ramPanel = view.findViewById(R.id.LLRAMPanel);
         cpuPanel = view.findViewById(R.id.LLCPUPanel);
+        completeTelemetry = view.findViewById(R.id.TVCompleteTelemetry);
         addView(view);
         setupPanels();
     }
@@ -59,7 +75,8 @@ public class FrameRating extends FrameLayout implements Runnable {
                 gpuPanel.setVisibility(GONE);
                 ramPanel.setVisibility(GONE);
                 cpuPanel.setVisibility(GONE);
-                
+                completeTelemetry.setVisibility(GONE);
+
                 activityManager = null;
                 memoryInfo = null;
                 break;
@@ -68,6 +85,7 @@ public class FrameRating extends FrameLayout implements Runnable {
                 gpuPanel.setVisibility(GONE);
                 ramPanel.setVisibility(GONE);
                 cpuPanel.setVisibility(GONE);
+                completeTelemetry.setVisibility(GONE);
 
                 activityManager = null;
                 memoryInfo = null;
@@ -77,6 +95,7 @@ public class FrameRating extends FrameLayout implements Runnable {
                 gpuPanel.setVisibility(VISIBLE);
                 ramPanel.setVisibility(VISIBLE);
                 cpuPanel.setVisibility(VISIBLE);
+                completeTelemetry.setVisibility(VISIBLE);
 
                 Context context = getContext();
                 activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -96,6 +115,42 @@ public class FrameRating extends FrameLayout implements Runnable {
 
     public void setGPUInfo(String gpuInfo) {
         post(() -> ((TextView)gpuPanel.getChildAt(1)).setText(gpuInfo));
+    }
+
+    public void setCompleteTelemetry(String resolution, String fpsLimit, String performancePolicy,
+                                     String gpuBackend, String dxWrapper, String wineVersion,
+                                     String box64Version) {
+        this.resolution = resolution;
+        this.fpsLimit = fpsLimit;
+        this.performancePolicy = performancePolicy;
+        this.gpuBackend = gpuBackend;
+        this.dxWrapper = dxWrapper;
+        this.wineVersion = wineVersion;
+        this.box64Version = box64Version;
+    }
+
+    public void setWrapperTelemetry(String wrapper, String backend, String profile) {
+        wrapperIdentity = wrapper;
+        wrapperBackend = backend;
+        maliProfile = profile;
+    }
+
+    public void setVulkanDriverTelemetry(String selectedDriver, int loadStatus) {
+        selectedVulkanDriver = selectedDriver;
+        loadedVulkanLibrary = getResources().getString(loadStatus == 2 ?
+                R.string.vulkan_library_custom_loaded : loadStatus == 1 ?
+                R.string.vulkan_library_system_loaded : R.string.vulkan_library_unavailable);
+        post(this::updateCompleteTelemetry);
+    }
+
+    public void setThermalStatus(ThermalGuard.State status) {
+        thermalStatus = getResources().getString(ThermalGuard.getStateLabelResource(status));
+        post(this::updateCompleteTelemetry);
+    }
+
+    public void setEffectiveFpsLimit(int limit) {
+        fpsLimit = limit > 0 ? String.valueOf(limit) : getResources().getString(R.string.off);
+        post(this::updateCompleteTelemetry);
     }
 
     public void reset() {
@@ -137,6 +192,28 @@ public class FrameRating extends FrameLayout implements Runnable {
             int maxClockSpeed = 0;
             for (short clockSpeed : clockSpeeds) maxClockSpeed = Math.max(maxClockSpeed, clockSpeed);
             ((TextView)cpuPanel.getChildAt(1)).setText(CPUStatus.formatClockSpeed(maxClockSpeed)+" | "+cpuInfo);
+            updateCompleteTelemetry();
         }
     }
+
+    private void updateCompleteTelemetry() {
+        if (mode != Mode.FULL) return;
+        float frameTime = lastFPS > 0 ? 1000.0f / lastFPS : 0;
+        String data = getResources().getString(R.string.fps_complete_data, frameTime, resolution,
+                fpsLimit, performancePolicy, gpuBackend, dxWrapper, wineVersion, box64Version,
+                thermalStatus != null ? thermalStatus : getResources().getString(R.string.thermal_unavailable));
+        if (wrapperIdentity != null || wrapperBackend != null || maliProfile != null) {
+            data += "\n"+getResources().getString(R.string.fps_wrapper_data,
+                    wrapperIdentity != null ? wrapperIdentity : "",
+                    wrapperBackend != null ? wrapperBackend : "",
+                    maliProfile != null ? maliProfile : "");
+        }
+        if (selectedVulkanDriver != null || loadedVulkanLibrary != null) {
+            data += "\n"+getResources().getString(R.string.fps_vulkan_driver_data,
+                    selectedVulkanDriver != null ? selectedVulkanDriver : "",
+                    loadedVulkanLibrary != null ? loadedVulkanLibrary : "");
+        }
+        completeTelemetry.setText(data);
+    }
+
 }

@@ -25,6 +25,7 @@ import io.vanta.app.core.BatteryUtils;
 import io.vanta.app.core.CPUStatus;
 import io.vanta.app.core.ProcessHelper;
 import io.vanta.app.core.StringUtils;
+import io.vanta.app.core.ThermalGuard;
 import io.vanta.app.core.UnitUtils;
 import io.vanta.app.widget.CPUListView;
 import io.vanta.app.xserver.Window;
@@ -285,27 +286,20 @@ public class TaskManagerDialog extends ContentDialog implements OnGetProcessInfo
 
     private void updateCPUPanel() {
         short[] clockSpeeds = CPUStatus.getCurrentClockSpeeds();
-        float totalClockSpeed = 0;
-        int maxClockSpeed = 0;
         int selectedClockSpeed = 0;
 
         ArrayList<String> popupMenuItems = new ArrayList<>();
 
         for (int i = 0; i < clockSpeeds.length; i++) {
-            totalClockSpeed += clockSpeeds[i];
             int currentMaxClockSpeed = CPUStatus.getMaxClockSpeed(i);
-            maxClockSpeed = Math.max(maxClockSpeed, currentMaxClockSpeed);
             selectedClockSpeed = Math.max(selectedClockSpeed, clockSpeeds[i]);
 
             popupMenuItems.add("CPU"+i+": "+CPUStatus.formatClockSpeed(clockSpeeds[i])+"/"+CPUStatus.formatClockSpeed(currentMaxClockSpeed));
         }
 
-        float avgClockSpeed = totalClockSpeed / clockSpeeds.length;
-        byte cpuUsagePercent = (byte)((avgClockSpeed / maxClockSpeed) * 100.0f);
-
-        cpuPanel.setTitle("CPU ("+cpuUsagePercent+"%)");
+        cpuPanel.setTitle("CPU");
         cpuPanel.setTextAt(0, CPUStatus.formatClockSpeed(selectedClockSpeed));
-        cpuPanel.setTextAt(1, CPUStatus.getTemperature()+"ºC");
+        cpuPanel.setTextAt(1, activity.getString(ThermalGuard.getStateLabelResource(activity.getThermalState())));
         cpuPanel.setPopupMenuItems(popupMenuItems);
     }
 

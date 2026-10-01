@@ -11,6 +11,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -59,6 +60,8 @@ import io.vanta.app.core.PreloaderDialog;
 import io.vanta.app.core.ProcessHelper;
 import io.vanta.app.core.StartupStatus;
 import io.vanta.app.core.StringUtils;
+import io.vanta.app.core.ThermalGuard;
+import io.vanta.app.core.ThermalPerformancePolicy;
 import io.vanta.app.core.TarCompressorUtils;
 import io.vanta.app.core.Win32AppWorkarounds;
 import io.vanta.app.core.WineInfo;
@@ -148,6 +151,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private final Handler startupWatchdogHandler = new Handler(Looper.getMainLooper());
     private final Runnable startupWatchdogTask = this::onStartupWatchdogTimeout;
     private volatile long startupWatchdogStartedAt = 0L;
+    private ThermalGuard thermalGuard;
+    private ThermalGuard.State pendingThermalWarning;
+    private ThermalGuard.State shownThermalWarning;
+    private boolean activityResumed;
+    private boolean thermalWarningShowing;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -287,6 +295,29 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             }
         });
 
+        if (container != null) {
+            thermalGuard = new ThermalGuard(this, new ThermalGuard.Listener() {
+                @Override
+                public void onThermalStateChanged(ThermalGuard.State state) {
+                    if (frameRating != null) frameRating.setThermalStatus(state);
+                    if (pendingThermalWarning != null) {
+                        pendingThermalWarning = state.ordinal() <= ThermalGuard.State.LIGHT.ordinal() ? null : state;
+                    }
+                }
+
+                @Override
+                public void onThermalWarning(ThermalGuard.State state) {
+                    if (!activityResumed) {
+                        if (pendingThermalWarning == null || state.ordinal() > pendingThermalWarning.ordinal()) {
+                            pendingThermalWarning = state;
+                        }
+                    }
+                    else showThermalWarning(state);
+                }
+            });
+            thermalGuard.start();
+        }
+
         setupUI();
 
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -346,6 +377,12 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     @Override
     public void onResume() {
         super.onResume();
+        activityResumed = true;
+        if (pendingThermalWarning != null) {
+            ThermalGuard.State warning = pendingThermalWarning;
+            pendingThermalWarning = null;
+            showThermalWarning(warning);
+        }
         if (environment != null) {
             xServerView.onResume();
             environment.onResume();
@@ -355,6 +392,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     @Override
     public void onPause() {
+        activityResumed = false;
         ForegroundService.onPauseSession(this);
         super.onPause();
         if (environment != null && !isInPictureInPictureMode()) {
@@ -373,6 +411,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     protected void onDestroy() {
         StartupStatus.setListener(null);
         disarmStartupWatchdog();
+        if (thermalGuard != null) thermalGuard.stop();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
         ForegroundService.stopSession(this);
@@ -582,6 +621,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK)) {
             VortekRendererComponent.Options options = VortekRendererComponent.Options.fromKeyValueSet(this, graphicsDriverConfig[0]);
             VortekRendererComponent vortekRendererComponent = new VortekRendererComponent(xServer, UnixSocketConfig.create(rootPath, UnixSocketConfig.VORTEK_SERVER_PATH), options);
+            if (frameRating != null) {
+                frameRating.setVulkanDriverTelemetry(
+                        getSelectedVulkanDriverTelemetry(),
+                        vortekRendererComponent.getVulkanLibraryStatus());
+            }
             environment.addComponent(vortekRendererComponent);
         }
         if (graphicsDriver[1].equals(GraphicsDrivers.VIRGL)) {
@@ -739,6 +783,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         if (container != null && container.getHUDMode() != FrameRating.Mode.DISABLED.ordinal()) {
             frameRating = new FrameRating(this);
             frameRating.setMode(FrameRating.Mode.values()[container.getHUDMode()]);
+            if (frameRating.getMode() == FrameRating.Mode.FULL) {
+                configureCompleteTelemetry(frameRating);
+            }
             frameRating.setVisibility(View.GONE);
             rootView.addView(frameRating);
         }
@@ -753,6 +800,114 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         if (MainActivity.DEBUG_MODE) rootView.addView(AppUtils.createDebugMsgTextView(this));
         AppUtils.observeSoftKeyboardVisibility(drawerLayout, renderer::setScreenOffsetYRelativeToCursor);
+    }
+
+    private void configureCompleteTelemetry(FrameRating rating) {
+        KeyValueSet[] configs = dxwrapperConfig != null ? dxwrapperConfig :
+                DXWrappers.parseConfigs(dxwrapper, container.getDXWrapperConfig());
+        String userLimit = dxwrapper.equals(DXWrappers.DXVK) ?
+                configs[0].get("framerate", "0") : "0";
+        ThermalPerformancePolicy policy = ThermalPerformancePolicy.fromId(
+                preferences.getString("thermal_performance_policy", "balanced"));
+        boolean severeThermalOverride = preferences.getBoolean("thermal_auto_adjust", false) &&
+                thermalGuard != null && thermalGuard.hasSustainedSeverePressure();
+        int effectiveLimit = policy.limit(parseFPSLimit(userLimit), severeThermalOverride);
+        String fpsLimit = effectiveLimit > 0 ? String.valueOf(effectiveLimit) : getString(R.string.off);
+        String policyName = getResources().getStringArray(R.array.thermal_performance_policies)[policy.ordinal()];
+        String vulkanBackend = GraphicsDrivers.getName(graphicsDriver[0])+" "+DefaultVersion.valueOf(graphicsDriver[0]);
+        String openGLBackend = GraphicsDrivers.getName(graphicsDriver[1])+" "+DefaultVersion.valueOf(graphicsDriver[1]);
+        String gpuName = preferences.getString("gpu_renderer", "");
+        String gpuBackend = (gpuName.isEmpty() ? getString(R.string.thermal_unavailable) : gpuName)+
+                " · "+vulkanBackend+" / "+openGLBackend;
+        String dxInfo = DXWrappers.getName(dxwrapper);
+        if (dxwrapper.equals(DXWrappers.DXVK)) {
+            dxInfo += " "+configs[0].get("version", DefaultVersion.DXVK(graphicsDriver[0]));
+        }
+        else if (dxwrapper.equals(DXWrappers.WINED3D)) {
+            dxInfo += " "+configs[0].get("version", DefaultVersion.WINED3D);
+        }
+        dxInfo += " · VKD3D "+configs[1].get("version", DefaultVersion.VKD3D);
+        String ddrawWrapper = configs[0].get("ddrawWrapper", DXWrappers.WINED3D);
+        if (!ddrawWrapper.equals(DXWrappers.WINED3D)) {
+            dxInfo += " · "+DXWrappers.getName(ddrawWrapper)+" "+
+                    (ddrawWrapper.equals(DXWrappers.D7VK) ? DefaultVersion.D7VK : DefaultVersion.CNC_DDRAW);
+        }
+        String box64Version = container.getBox64Version().isEmpty() ? DefaultVersion.BOX64 : container.getBox64Version();
+        rating.setCompleteTelemetry(screenInfo.toString(), fpsLimit, policyName, gpuBackend, dxInfo,
+                wineInfo.fullVersion(), box64Version);
+        if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK)) {
+            rating.setVulkanDriverTelemetry(getSelectedVulkanDriverTelemetry(), 0);
+        }
+        String selectedWrapper = graphicsDriverConfig[0].get("maliWrapper");
+        if (!selectedWrapper.isEmpty()) {
+            rating.setWrapperTelemetry(
+                    getString(selectedWrapper.equals("auto") ? R.string.mali_wrapper_auto : R.string.mali_wrapper_stable),
+                    getString(R.string.mali_wrapper_backend_stable), policyName);
+        }
+        rating.setThermalStatus(thermalGuard != null ? thermalGuard.getState() : ThermalGuard.State.UNAVAILABLE);
+    }
+
+    private String getSelectedVulkanDriverTelemetry() {
+        String selected = graphicsDriverConfig[0].get("adrenotoolsDriver", "System");
+        return selected.startsWith("vanta-runtime:") ?
+                selected.substring("vanta-runtime:".length()) : selected;
+    }
+
+    public ThermalGuard.SessionSummary getThermalSessionSummary() {
+        return thermalGuard != null ? thermalGuard.getSessionSummary() : null;
+    }
+
+    public ThermalGuard.State getThermalState() {
+        return thermalGuard != null ? thermalGuard.getState() : ThermalGuard.State.UNAVAILABLE;
+    }
+
+    private static int parseFPSLimit(String value) {
+        try {
+            return Integer.parseInt(value);
+        }
+        catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private void showThermalWarning(ThermalGuard.State state) {
+        if (isFinishing() || isDestroyed()) return;
+        if (thermalWarningShowing) {
+            if (shownThermalWarning == null || state.ordinal() > shownThermalWarning.ordinal()) {
+                pendingThermalWarning = state;
+            }
+            return;
+        }
+        thermalWarningShowing = true;
+        shownThermalWarning = state;
+        boolean severe = state.isAtLeast(ThermalGuard.State.SEVERE);
+        boolean suggestEco = preferences.getBoolean("thermal_suggest_eco", true);
+        ContentDialog dialog = new ContentDialog(this);
+        dialog.setIcon(R.drawable.content_dialog_type_alert);
+        dialog.setTitle(severe ? R.string.thermal_warning_title_severe : R.string.thermal_warning_title_moderate);
+        dialog.setMessage(severe ? R.string.thermal_warning_message_severe : R.string.thermal_warning_message_moderate);
+        ((android.widget.Button)dialog.findViewById(R.id.BTConfirm)).setText(suggestEco ?
+                R.string.thermal_warning_eco : R.string.thermal_warning_continue);
+        if (suggestEco) {
+            dialog.setBottomBarText(getString(R.string.thermal_eco_next_session));
+            ((android.widget.Button)dialog.findViewById(R.id.BTCancel)).setText(R.string.thermal_warning_continue);
+            dialog.setOnConfirmCallback(() -> {
+                preferences.edit().putString("thermal_performance_policy", ThermalPerformancePolicy.ECO.id).apply();
+                AppUtils.showToast(this, R.string.thermal_eco_next_session);
+            });
+        }
+        else dialog.findViewById(R.id.BTCancel).setVisibility(View.GONE);
+        dialog.setOnDismissListener(ignored -> {
+            thermalWarningShowing = false;
+            shownThermalWarning = null;
+            if (pendingThermalWarning != null && activityResumed) {
+                ThermalGuard.State pending = pendingThermalWarning;
+                pendingThermalWarning = null;
+                showThermalWarning(pending);
+            }
+        });
+        dialog.show();
+        Log.i("VantaThermalGuard", "thermal warning dialog shown for " + state);
     }
 
     private void showInputControlsDialog() {
@@ -965,7 +1120,17 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private boolean extractDXWrapperFiles() {
         String cacheId = "";
         if (dxwrapper.equals(DXWrappers.DXVK)) {
-            DXVKConfigDialog.setEnvVars(this, dxwrapperConfig[0], envVars);
+            KeyValueSet effectiveDXVKConfig = new KeyValueSet(dxwrapperConfig[0].toString());
+            int userLimit = parseFPSLimit(effectiveDXVKConfig.get("framerate", "0"));
+            ThermalPerformancePolicy policy = ThermalPerformancePolicy.fromId(
+                    preferences.getString("thermal_performance_policy", "balanced"));
+            boolean severeThermalOverride = preferences.getBoolean("thermal_auto_adjust", false) &&
+                    thermalGuard != null && thermalGuard.hasSustainedSeverePressure();
+            int effectiveLimit = policy.limit(userLimit, severeThermalOverride);
+            if (effectiveLimit > 0) effectiveDXVKConfig.put("framerate", effectiveLimit);
+            if (thermalGuard != null) thermalGuard.recordFpsLimit(userLimit, effectiveLimit, severeThermalOverride);
+            if (frameRating != null) frameRating.setEffectiveFpsLimit(effectiveLimit);
+            DXVKConfigDialog.setEnvVars(this, effectiveDXVKConfig, envVars);
             cacheId += dxwrapper+"-"+dxwrapperConfig[0].get("version", DefaultVersion.DXVK(graphicsDriver[0]));
         }
         else if (dxwrapper.equals(DXWrappers.WINED3D)) {

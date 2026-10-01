@@ -164,6 +164,8 @@ public abstract class GPUHelper {
 
     public static native String[] vkGetDeviceExtensions();
 
+    public static native String[] vkGetPhysicalDeviceDetails();
+
     @CriticalNative
     public static native int vkGetApiVersion();
 

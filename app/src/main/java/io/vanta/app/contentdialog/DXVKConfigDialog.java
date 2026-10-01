@@ -33,6 +33,7 @@ public class DXVKConfigDialog extends ContentDialog {
         final Spinner sMaxDeviceMemory = findViewById(R.id.SMaxDeviceMemory);
         final Spinner sCustomDevice = findViewById(R.id.SCustomDevice);
         final Spinner sDDrawWrapper = findViewById(R.id.SDDrawWrapper);
+        final TextView ddrawDescription = findViewById(R.id.TVDDrawWrapperInfo);
         final Spinner sPreset = findViewById(R.id.SDXVKPreset);
         final TextView tvVersionProfile = findViewById(R.id.TVDXVKVersionProfile);
 
@@ -40,6 +41,14 @@ public class DXVKConfigDialog extends ContentDialog {
         AppUtils.setSpinnerSelectionFromIdentifier(sFramerate, config.get("framerate", "0"));
         AppUtils.setSpinnerSelectionFromMemorySize(sMaxDeviceMemory, config.get("maxDeviceMemory", "0"));
         AppUtils.setSpinnerSelectionFromIdentifier(sDDrawWrapper, config.get("ddrawWrapper", DXWrappers.WINED3D));
+        Runnable updateDDrawDescription = () -> {
+            String wrapper = StringUtils.parseIdentifier(sDDrawWrapper.getSelectedItem());
+            int description = wrapper.equals(DXWrappers.CNC_DDRAW) ? R.string.ddraw_cnc_description :
+                    wrapper.equals(DXWrappers.D7VK) ? R.string.ddraw_d7vk_description :
+                    R.string.ddraw_wined3d_description;
+            ddrawDescription.setText(description);
+        };
+        updateDDrawDescription.run();
 
         String version = config.get("version");
         String defaultVersion = DefaultVersion.DXVK(graphicsDriver);
@@ -103,6 +112,7 @@ public class DXVKConfigDialog extends ContentDialog {
         AdapterView.OnItemSelectedListener markPresetCustom = new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateDDrawDescription.run();
                 if (sPreset.getSelectedItemPosition() != 0) sPreset.setSelection(0, false);
             }
 

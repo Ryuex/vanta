@@ -4,16 +4,8 @@
     <group android:checkableBehavior="single">
         <item android:icon="@drawable/icon_container" android:id="@+id/menu_item_containers" android:title="@string/containers" />
     </group>
-    <item android:title="@string/drawer_runtime">
-        <menu>
-            <group android:checkableBehavior="single">
-                <item android:icon="@drawable/icon_wine" android:id="@+id/menu_item_wine_manager" android:title="@string/wine_manager" />
-                <item android:icon="@drawable/icon_display_settings" android:id="@+id/menu_item_dxvk_manager" android:title="@string/dxvk_manager" />
-                <item android:icon="@drawable/icon_display_settings" android:id="@+id/menu_item_graphics_drivers" android:title="@string/graphics_driver_manager" />
-                <item android:icon="@drawable/icon_cpu" android:id="@+id/menu_item_box64_settings" android:title="@string/box64_settings" />
-            </group>
-        </menu>
-    </item>
+    <item android:icon="@drawable/icon_wine" android:id="@+id/menu_item_runtime_manager" android:title="@string/runtime_manager" />
+    <item android:icon="@drawable/icon_cpu" android:id="@+id/menu_item_box64_settings" android:title="@string/box64_settings" />
     <item android:title="@string/drawer_tools">
         <menu>
             <group android:checkableBehavior="single">

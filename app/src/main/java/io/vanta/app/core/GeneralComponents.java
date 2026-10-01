@@ -187,6 +187,11 @@ public abstract class GeneralComponents {
     }
 
     public static String getDefinitivePath(Type type, Context context, String identifier) {
+        return getDefinitivePath(type, context, identifier, false);
+    }
+
+    public static String getDefinitivePath(Type type, Context context, String identifier,
+                                           boolean allowExperimentalGraphicsDriver) {
         if (identifier.isEmpty()) return null;
         if (type == Type.SOUNDFONT && isBuiltinComponent(type, identifier)) {
             File destination = type.getDestination(context);
@@ -199,6 +204,16 @@ public abstract class GeneralComponents {
         }
         else if (type == Type.ADRENOTOOLS_DRIVER) {
             if (isBuiltinComponent(type, identifier)) return null;
+            if (identifier.startsWith("vanta-runtime:")) {
+                GraphicsRuntimePackage runtimePackage =
+                        GraphicsRuntimePackageStore.findInstalledPackage(context, identifier);
+                if (runtimePackage == null || runtimePackage.kind != GraphicsRuntimePackage.Kind.VULKAN_DRIVER ||
+                        !runtimePackage.isCompatibleWith(MaliCapabilityProbe.probe(context), allowExperimentalGraphicsDriver)) {
+                    android.util.Log.w("VantaGraphicsPackages", "Selected Vulkan package is unavailable or incompatible; using the system driver.");
+                    return null;
+                }
+                return runtimePackage.getLibraryFile().getPath();
+            }
             File source = type.getSource(context, identifier);
             File[] manifestFiles = source.listFiles((file, name) -> name.endsWith(".json"));
             if (manifestFiles != null) {
@@ -258,7 +273,9 @@ public abstract class GeneralComponents {
             AppUtils.showToast(activity, R.string.component_removal_failed);
             return;
         }
-        HttpUtils.download(activity, String.format(INSTALLABLE_COMPONENTS_URL, type.lowerName()+"/"+filename), candidate, (success) -> {
+        String downloadTitle = activity.getString(R.string.downloading_component, type.title(), identifier);
+        HttpUtils.download(activity, String.format(INSTALLABLE_COMPONENTS_URL, type.lowerName()+"/"+filename),
+                candidate, downloadTitle, (success) -> {
             if (!success) {
                 FileUtils.delete(candidate);
                 AppUtils.showToast(activity, R.string.a_network_error_occurred);
@@ -642,6 +659,10 @@ public abstract class GeneralComponents {
 
     private static void loadSpinner(Type type, Spinner spinner, String selectedItem, String defaultItem) {
         ArrayList<String> items = getAvailableComponentNames(type, spinner.getContext());
+        if (type == Type.ADRENOTOOLS_DRIVER && selectedItem != null &&
+                selectedItem.startsWith("vanta-runtime:") && !items.contains(selectedItem)) {
+            items.add(selectedItem);
+        }
 
         if (type.isVersioned()) {
             items.sort((o1, o2) -> Integer.compare(GPUHelper.vkMakeVersion(o1), GPUHelper.vkMakeVersion(o2)));

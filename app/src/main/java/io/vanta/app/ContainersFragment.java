@@ -9,8 +9,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,7 +62,6 @@ public class ContainersFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
         preloaderDialog = new PreloaderDialog(getActivity());
     }
 
@@ -183,20 +180,6 @@ public class ContainersFragment extends Fragment {
             .addToBackStack(null)
             .replace(R.id.FLFragmentContainer, new ContainerDetailFragment())
             .commit();
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
-        menuInflater.inflate(R.menu.containers_menu, menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem menuItem) {
-        if (menuItem.getItemId() == R.id.menu_item_add) {
-            createContainer();
-            return true;
-        }
-        else return super.onOptionsItemSelected(menuItem);
     }
 
     private class ContainersAdapter extends RecyclerView.Adapter<ContainersAdapter.ViewHolder> {

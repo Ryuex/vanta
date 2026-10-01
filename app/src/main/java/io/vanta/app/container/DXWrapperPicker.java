@@ -38,7 +38,16 @@ public class DXWrapperPicker {
                 final String[] oldDXWrapper = {selectedDXWrapper};
                 taggedSelectionBox.setOnItemSelectedListener((item) -> {
                     String dxwrapper = StringUtils.parseIdentifier(item);
-                    if (!oldDXWrapper[0].equals(dxwrapper)) taggedSelectionBox.setTag("");
+                    if (!oldDXWrapper[0].equals(dxwrapper)) {
+                        String ddrawWrapper = new KeyValueSet(taggedSelectionBox.getTag())
+                                .get("ddrawWrapper", DXWrappers.WINED3D);
+                        taggedSelectionBox.setTag("");
+                        if (!ddrawWrapper.equals(DXWrappers.WINED3D)) {
+                            KeyValueSet config = new KeyValueSet();
+                            config.put("ddrawWrapper", ddrawWrapper);
+                            taggedSelectionBox.setTag(config.toString());
+                        }
+                    }
                     oldDXWrapper[0] = dxwrapper;
                 });
             }
@@ -90,6 +99,13 @@ public class DXWrapperPicker {
         direct3D.setSelectedItem(DXWrappers.getName(DXWrappers.WINED3D));
         KeyValueSet[] configs = DXWrappers.parseConfigs(DXWrappers.WINED3D, getDXWrapperConfig());
         configs[0].put("version", DefaultVersion.WINED3D);
+        direct3D.setTag(configs[0].toString());
+    }
+
+    public void applyRecommendedDDraw(String wrapper) {
+        TaggedSelectionBox direct3D = (TaggedSelectionBox)container.getChildAt(0);
+        KeyValueSet[] configs = DXWrappers.parseConfigs(DXWrappers.DXVK, getDXWrapperConfig());
+        configs[0].put("ddrawWrapper", wrapper);
         direct3D.setTag(configs[0].toString());
     }
 

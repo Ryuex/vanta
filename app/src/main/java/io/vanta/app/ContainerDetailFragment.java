@@ -38,6 +38,7 @@ import io.vanta.app.container.ContainerManager;
 import io.vanta.app.container.Drive;
 import io.vanta.app.container.DXWrappers;
 import io.vanta.app.container.GraphicsDrivers;
+import io.vanta.app.container.MaliRuntimePicker;
 import io.vanta.app.contentdialog.AddEnvVarDialog;
 import io.vanta.app.contentdialog.AudioDriverConfigDialog;
 import io.vanta.app.contentdialog.ContentDialog;
@@ -48,6 +49,7 @@ import io.vanta.app.container.DXWrapperPicker;
 import io.vanta.app.core.EnvVars;
 import io.vanta.app.core.FileUtils;
 import io.vanta.app.core.GeneralComponents;
+import io.vanta.app.core.GPUHelper;
 import io.vanta.app.container.GraphicsDriverPicker;
 import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.PreloaderDialog;
@@ -145,6 +147,8 @@ public class ContainerDetailFragment extends Fragment {
         final String oldGraphicsDriverConfig = isEditMode() ? container.getGraphicsDriverConfig() : "";
         String selectedGraphicsDriver = isEditMode() ? container.getGraphicsDriver() : GraphicsDrivers.getDefaultDriver(context);
         GraphicsDriverPicker graphicsDriverPicker = new GraphicsDriverPicker(view.findViewById(R.id.LLGraphicsDriver), selectedGraphicsDriver, oldGraphicsDriverConfig);
+        new MaliRuntimePicker(view.findViewById(R.id.LLVantaMaliRuntime), graphicsDriverPicker,
+                oldGraphicsDriverConfig);
 
         String oldDXWrapperConfig = isEditMode() ? container.getDXWrapperConfig() : "";
         String selectedDXWrapper = isEditMode() ? container.getDXWrapper() : Container.DEFAULT_DXWRAPPER;
@@ -183,9 +187,6 @@ public class ContainerDetailFragment extends Fragment {
             String defaultDXVK = DefaultVersion.DXVK(recommendedDrivers[0]);
             ArrayList<String> availableDXVKVersions = GeneralComponents.getAvailableComponentNames(
                     GeneralComponents.Type.DXVK, context);
-            String wineVersion = sWineVersion.getSelectedItem().toString();
-            String box64Version = sBox64Version.getSelectedItem().toString();
-
             ContentDialog dialog = new ContentDialog(context, R.layout.recommended_configuration_preview);
             dialog.setIcon(R.drawable.icon_display_settings);
             dialog.setTitle(R.string.recommended_configuration);
@@ -197,26 +198,53 @@ public class ContainerDetailFragment extends Fragment {
                 String dxvkVersion = profile == 1 && availableDXVKVersions.contains(DefaultVersion.MINOR_DXVK) ?
                         DefaultVersion.MINOR_DXVK : defaultDXVK;
                 boolean hasDXVK = availableDXVKVersions.contains(dxvkVersion);
-                String dxvkLabel = hasDXVK ? dxvkVersion : getString(R.string.not_applicable);
+                String recommendedDXWrapper = hasDXVK ? DXWrappers.DXVK : DXWrappers.WINED3D;
+                String recommendedDDrawWrapper = getRecommendedDDrawWrapper(profile, recommendedDrivers[0]);
                 String box64PresetId = profile == 1 ? Box64Preset.STABILITY :
                         profile == 0 ? Box64Preset.INTERMEDIATE : Box64Preset.PERFORMANCE;
-                String box64PresetName = Box64PresetManager.getPreset(context, box64PresetId).name;
+                Box64Preset recommendedBox64Preset = Box64PresetManager.getPreset(context, box64PresetId);
                 String resolution = profile == 1 ? "960x544" : Container.DEFAULT_SCREEN_SIZE;
                 String framerate = profile == 0 ? "60" : "0";
                 String framerateLabel = framerate.equals("0") ? getString(R.string.off) : framerate;
-                previewText.setText(getString(R.string.recommended_configuration_preview,
-                        profileSpinner.getSelectedItem().toString(),
-                        GraphicsDrivers.getName(recommendedDrivers[0]),
-                        DefaultVersion.valueOf(recommendedDrivers[0]),
-                        GraphicsDrivers.getName(recommendedDrivers[1]),
-                        DefaultVersion.valueOf(recommendedDrivers[1]),
-                        DXWrappers.getName(hasDXVK ? DXWrappers.DXVK : DXWrappers.WINED3D),
-                        dxvkLabel,
-                        wineVersion,
-                        box64PresetName,
-                        box64Version,
-                        resolution,
-                        framerateLabel));
+                String currentGraphicsDriver = graphicsDriverPicker.getGraphicsDriver();
+                String[] currentDrivers = GraphicsDrivers.parseIdentifiers(currentGraphicsDriver);
+                String currentDXWrapper = dxwrapperPicker.getDXWrapper();
+                KeyValueSet[] currentDXConfigs = DXWrappers.parseConfigs(
+                        currentDXWrapper, dxwrapperPicker.getDXWrapperConfig());
+                String currentDDrawWrapper = currentDXConfigs[0].get("ddrawWrapper", DXWrappers.WINED3D);
+                StringBuilder changes = new StringBuilder();
+
+                addRecommendationChange(changes, R.string.vulkan,
+                        GraphicsDrivers.getName(recommendedDrivers[0])+" "+DefaultVersion.valueOf(recommendedDrivers[0]),
+                        !currentDrivers[0].equals(recommendedDrivers[0]));
+                addRecommendationChange(changes, R.string.opengl,
+                        GraphicsDrivers.getName(recommendedDrivers[1])+" "+DefaultVersion.valueOf(recommendedDrivers[1]),
+                        !currentDrivers[1].equals(recommendedDrivers[1]));
+                addRecommendationChange(changes, R.string.dxwrapper,
+                        DXWrappers.getName(recommendedDXWrapper), !currentDXWrapper.equals(recommendedDXWrapper));
+                if (hasDXVK) {
+                    String currentDXVKVersion = currentDXConfigs[0].get("version", DefaultVersion.DXVK(recommendedDrivers[0]));
+                    addRecommendationChange(changes, R.string.version, dxvkVersion,
+                            !currentDXWrapper.equals(DXWrappers.DXVK) || !currentDXVKVersion.equals(dxvkVersion));
+                }
+                addRecommendationChange(changes, R.string.ddraw_wrapper,
+                        DXWrappers.getName(recommendedDDrawWrapper), !currentDDrawWrapper.equals(recommendedDDrawWrapper));
+                String currentBox64Preset = Box64PresetManager.getSpinnerSelectedId(sBox64Preset);
+                addRecommendationChange(changes, R.string.box64_preset, recommendedBox64Preset.name,
+                        !currentBox64Preset.equals(box64PresetId));
+                addRecommendationChange(changes, R.string.screen_size, resolution,
+                        !getScreenSize(view).equals(resolution));
+                if (hasDXVK) {
+                    String currentFramerate = currentDXWrapper.equals(DXWrappers.DXVK) ?
+                            currentDXConfigs[0].get("framerate", "0") : "0";
+                    addRecommendationChange(changes, R.string.frame_rate, framerateLabel,
+                            !currentFramerate.equals(framerate));
+                }
+                String header = getString(R.string.recommended_configuration_preview_header,
+                        profileSpinner.getSelectedItem().toString());
+                previewText.setText(changes.length() == 0 ?
+                        header+"\n"+getString(R.string.recommended_configuration_no_changes) :
+                        header+"\n"+changes);
             };
             profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -237,6 +265,7 @@ public class ContainerDetailFragment extends Fragment {
                 if (hasDXVK) dxwrapperPicker.applyRecommendedDXVK(dxvkVersion,
                         profile == 0 ? "60" : "0");
                 else dxwrapperPicker.applyRecommendedWineD3D();
+                dxwrapperPicker.applyRecommendedDDraw(getRecommendedDDrawWrapper(profile, recommendedDrivers[0]));
                 loadScreenSizeSpinner(view, profile == 1 ? "960x544" : Container.DEFAULT_SCREEN_SIZE);
                 String box64PresetId = profile == 1 ? Box64Preset.STABILITY :
                         profile == 0 ? Box64Preset.INTERMEDIATE : Box64Preset.PERFORMANCE;
@@ -307,7 +336,8 @@ public class ContainerDetailFragment extends Fragment {
 
                     saveWineRegistryKeys(view);
 
-                    boolean requireRestart = graphicsDriver.equals(GraphicsDrivers.VORTEK) && VortekConfigDialog.isRequireRestart(oldGraphicsDriverConfig, graphicsDriverConfig);
+                    boolean requireRestart = GraphicsDrivers.parseIdentifiers(graphicsDriver)[0].equals(GraphicsDrivers.VORTEK) &&
+                            VortekConfigDialog.isRequireRestart(oldGraphicsDriverConfig, graphicsDriverConfig);
                     if (requireRestart) ContentDialog.confirm(context, R.string.the_settings_have_been_changed_do_you_want_to_restart_the_app, () -> AppUtils.restartApplication(context));
 
                     getActivity().onBackPressed();
@@ -522,6 +552,19 @@ public class ContainerDetailFragment extends Fragment {
             sMouseWarpOverride.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, mouseWarpOverrideList));
             AppUtils.setSpinnerSelectionFromValue(sMouseWarpOverride, registryEditor.getStringValue("Software\\Wine\\DirectInput", "MouseWarpOverride", "disable"));
         }
+    }
+
+    private String getRecommendedDDrawWrapper(int profile, String vulkanDriver) {
+        if (profile != 2) return DXWrappers.WINED3D;
+        boolean supportsD7VK = vulkanDriver.equals(GraphicsDrivers.TURNIP) ||
+                GPUHelper.vkGetApiVersion() >= GPUHelper.VK_API_VERSION_1_3;
+        return supportsD7VK ? DXWrappers.D7VK : DXWrappers.WINED3D;
+    }
+
+    private void addRecommendationChange(StringBuilder changes, int labelResId, String value, boolean changed) {
+        if (!changed) return;
+        if (changes.length() > 0) changes.append('\n');
+        changes.append(getString(R.string.recommended_configuration_change, getString(labelResId), value));
     }
 
     public static String getScreenSize(View view) {

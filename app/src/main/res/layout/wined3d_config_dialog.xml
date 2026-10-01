@@ -55,6 +55,15 @@
             android:entries="@array/ddraw_wrapper_entries" />
 
         <TextView
+            android:id="@+id/TVDDrawWrapperInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="8dp"
+            android:textColor="?attr/colorSecondaryText"
+            android:textSize="12sp" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/renderer" />

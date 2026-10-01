@@ -64,7 +64,9 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.resourceMemoryType = (byte)config.getInt("resourceMemoryType");
 
             String adrenotoolsDriver = config.get("adrenotoolsDriver");
-            options.libvulkanPath = GeneralComponents.getDefinitivePath(GeneralComponents.Type.ADRENOTOOLS_DRIVER, context, adrenotoolsDriver);
+            boolean allowExperimentalDriver = config.getBoolean("maliAdvancedDriver", false);
+            options.libvulkanPath = GeneralComponents.getDefinitivePath(GeneralComponents.Type.ADRENOTOOLS_DRIVER,
+                    context, adrenotoolsDriver, allowExperimentalDriver);
             return options;
         }
     }
@@ -168,6 +170,8 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
     private native void destroyVkContext(long contextPtr);
 
     private native void initVulkanWrapper(String nativeLibraryDir, String libvulkanPath);
+
+    public native int getVulkanLibraryStatus();
 
     private native boolean handleExtraDataRequest(long contextPtr, int requestCode, int requestLength);
 }

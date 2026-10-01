@@ -2,75 +2,103 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:gravity="center"
-    android:clickable="false"
-    android:focusable="false">
+    android:background="#CC08070D"
+    android:gravity="center">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        android:background="@drawable/vanta_preloader_panel"
+        android:gravity="center_vertical"
         android:orientation="vertical"
-        android:paddingTop="22dp"
-        android:paddingBottom="22dp"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp"
-        android:layout_gravity="center"
-        android:gravity="right"
-        android:background="?attr/preloaderBackground">
+        android:padding="22dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <FrameLayout
-                android:layout_width="wrap_content"
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/vanta_mark" />
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="16dp">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/CircularProgressIndicator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:trackThickness="10dp"
-                    app:trackColor="#bdbdbd"
-                    app:indicatorColor="?attr/colorAccent"
-                    app:indicatorSize="64dp"
-                    android:layout_gravity="center" />
+                android:layout_weight="1"
+                android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/TVProgress"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/TVBrand"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="14dp"
-                    android:layout_gravity="center" />
-            </FrameLayout>
+                    android:text="@string/preparing_vanta"
+                    android:textColor="?attr/colorPrimaryText"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/TextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="20dp"
-                android:textColor="?attr/colorPrimaryText"
-                android:text="@string/downloading_file" />
+                <TextView
+                    android:id="@+id/TextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/downloading_file"
+                    android:textColor="?attr/colorSecondaryText"
+                    android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/ProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="22dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/vanta_primary"
+            android:max="100"
+            android:progressTint="@color/vanta_primary"
+            android:progressBackgroundTint="@color/vanta_border" />
+
+        <TextView
+            android:id="@+id/TVProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="end"
+            android:textColor="?attr/colorPrimaryText"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/TVStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/preparing_windows_environment"
+            android:textColor="?attr/colorSecondaryText"
+            android:textSize="12sp" />
 
         <LinearLayout
             android:id="@+id/LLBottomBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="end"
+            android:orientation="vertical"
             android:visibility="gone">
 
-            <View style="@style/HorizontalLine" />
-
             <Button
+                android:id="@+id/BTCancel"
                 style="@style/ButtonNeutral"
                 android:layout_width="wrap_content"
                 android:layout_height="42dp"
-                android:text="@string/cancel"
-                android:id="@+id/BTCancel" />
+                android:text="@string/cancel" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

@@ -39,11 +39,13 @@
             },
             {
                 "name" : "Test Direct3D",
-                "path" : "Z:/opt/apps/TestD3D.exe"
+                "path" : "Z:/opt/apps/TestD3D.exe",
+                "iconAsset" : "guest-icons/vanta-3d-test.ico"
             },
             {
                 "name" : "Computer",
-                "path" : "C:/windows/wfm.exe"
+                "path" : "C:/windows/wfm.exe",
+                "iconAsset" : "guest-icons/vanta-computer.ico"
             },
             {
                 "name" : "Task Manager",

@@ -76,9 +76,16 @@ public class VortekConfigDialog extends ContentDialog {
 
     public static boolean isRequireRestart(String oldGraphicsDriverConfig, String newGraphicsDriverConfig) {
         if (!oldGraphicsDriverConfig.equals(newGraphicsDriverConfig)) {
-            String oldAdrenotoolsDriver = (new KeyValueSet(oldGraphicsDriverConfig)).get("adrenotoolsDriver");
-            String newAdrenotoolsDriver = (new KeyValueSet(newGraphicsDriverConfig)).get("adrenotoolsDriver");
-            return !oldAdrenotoolsDriver.isEmpty() && !newAdrenotoolsDriver.isEmpty() && !newAdrenotoolsDriver.equals(oldAdrenotoolsDriver);
+            KeyValueSet oldConfig = new KeyValueSet(oldGraphicsDriverConfig);
+            KeyValueSet newConfig = new KeyValueSet(newGraphicsDriverConfig);
+            String oldDriver = oldConfig.get("adrenotoolsDriver");
+            String newDriver = newConfig.get("adrenotoolsDriver");
+            boolean driverChanged = !oldDriver.equals(newDriver);
+            boolean advancedChanged = !oldConfig.get("maliAdvancedDriver", "false")
+                    .equals(newConfig.get("maliAdvancedDriver", "false"));
+            if (driverChanged && (!oldDriver.isEmpty() && !newDriver.isEmpty() ||
+                    oldDriver.startsWith("vanta-runtime:") || newDriver.startsWith("vanta-runtime:"))) return true;
+            return advancedChanged && newDriver.startsWith("vanta-runtime:");
         }
         else return false;
     }

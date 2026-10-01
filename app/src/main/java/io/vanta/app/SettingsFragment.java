@@ -52,8 +52,12 @@ import io.vanta.app.core.Callback;
 import io.vanta.app.core.DefaultVersion;
 import io.vanta.app.core.FileUtils;
 import io.vanta.app.core.GeneralComponents;
+import io.vanta.app.core.GpuCapabilityProfile;
+import io.vanta.app.core.GraphicsRuntimePackage;
+import io.vanta.app.core.GraphicsRuntimePackageStore;
 import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.LocaleHelper;
+import io.vanta.app.core.MaliCapabilityProbe;
 import io.vanta.app.core.PreloaderDialog;
 import io.vanta.app.core.StringUtils;
 import io.vanta.app.core.UnitUtils;
@@ -71,16 +75,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SettingsFragment extends Fragment {
     public static final String SECTION_ARGUMENT = "settings_section";
-    public static final String SECTION_DXVK_MANAGER = "dxvk_manager";
-    public static final String SECTION_GRAPHICS_DRIVERS = "graphics_drivers";
-    public static final String SECTION_WINE_MANAGER = "wine_manager";
+    public static final String SECTION_RUNTIME_MANAGER = "runtime_manager";
     public static final String SECTION_BOX64 = "box64";
     public static final String DEFAULT_WINE_DEBUG_CHANNELS = "warn,err,fixme";
     public static final byte APP_THEME_LIGHT = 0;
@@ -89,6 +95,7 @@ public class SettingsFragment extends Fragment {
     private PreloaderDialog preloaderDialog;
     private SharedPreferences preferences;
     private boolean midiDeviceCallbackRegistered = false;
+    private final AtomicLong graphicsPackageRefreshId = new AtomicLong();
 
     public static SettingsFragment newInstance(String section) {
         SettingsFragment fragment = new SettingsFragment();
@@ -109,9 +116,7 @@ public class SettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         String section = getArguments() != null ? getArguments().getString(SECTION_ARGUMENT) : null;
-        int title = SECTION_DXVK_MANAGER.equals(section) ? R.string.dxvk_manager :
-                SECTION_GRAPHICS_DRIVERS.equals(section) ? R.string.graphics_driver_manager :
-                SECTION_WINE_MANAGER.equals(section) ? R.string.wine_manager :
+        int title = SECTION_RUNTIME_MANAGER.equals(section) ? R.string.runtime_manager :
                 SECTION_BOX64.equals(section) ? R.string.box64_settings : R.string.settings;
         ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(title);
     }
@@ -210,6 +215,29 @@ public class SettingsFragment extends Fragment {
         final CheckBox cbSaveMemOnRunFromSteam = view.findViewById(R.id.CBSaveMemOnRunFromSteam);
         cbSaveMemOnRunFromSteam.setChecked(preferences.getBoolean("save_mem_on_run_from_steam", true));
 
+        final CheckBox cbThermalGuardEnabled = view.findViewById(R.id.CBThermalGuardEnabled);
+        final CheckBox cbThermalWarningsEnabled = view.findViewById(R.id.CBThermalWarningsEnabled);
+        final CheckBox cbThermalSuggestEco = view.findViewById(R.id.CBThermalSuggestEco);
+        final CheckBox cbThermalAutoAdjust = view.findViewById(R.id.CBThermalAutoAdjust);
+        final Spinner sThermalPolicy = view.findViewById(R.id.SThermalPerformancePolicy);
+        cbThermalGuardEnabled.setChecked(preferences.getBoolean("thermal_guard_enabled", true));
+        cbThermalWarningsEnabled.setChecked(preferences.getBoolean("thermal_warnings_enabled", true));
+        cbThermalSuggestEco.setChecked(preferences.getBoolean("thermal_suggest_eco", true));
+        cbThermalAutoAdjust.setChecked(preferences.getBoolean("thermal_auto_adjust", false));
+        String thermalPolicy = preferences.getString("thermal_performance_policy", "balanced");
+        sThermalPolicy.setSelection(thermalPolicy.equals("eco") ? 0 :
+                thermalPolicy.equals("performance") ? 2 : thermalPolicy.equals("unlimited") ? 3 : 1);
+        Runnable updateThermalSettingsAvailability = () -> {
+            boolean enabled = cbThermalGuardEnabled.isChecked();
+            cbThermalWarningsEnabled.setEnabled(enabled);
+            cbThermalSuggestEco.setEnabled(enabled && cbThermalWarningsEnabled.isChecked());
+            cbThermalAutoAdjust.setEnabled(enabled);
+            sThermalPolicy.setEnabled(enabled);
+        };
+        cbThermalGuardEnabled.setOnCheckedChangeListener((button, checked) -> updateThermalSettingsAvailability.run());
+        cbThermalWarningsEnabled.setOnCheckedChangeListener((button, checked) -> updateThermalSettingsAvailability.run());
+        updateThermalSettingsAvailability.run();
+
         final CheckBox cbEnableWineDebug = view.findViewById(R.id.CBEnableWineDebug);
         cbEnableWineDebug.setChecked(preferences.getBoolean("enable_wine_debug", false));
 
@@ -274,6 +302,12 @@ public class SettingsFragment extends Fragment {
             editor.putBoolean("enable_background_protection", cbEnableBackgroundProtection.isChecked());
             editor.putBoolean("enable_background_wakelock", cbEnableBackgroundWakelock.isChecked());
             editor.putBoolean("save_mem_on_run_from_steam", cbSaveMemOnRunFromSteam.isChecked());
+            editor.putBoolean("thermal_guard_enabled", cbThermalGuardEnabled.isChecked());
+            editor.putBoolean("thermal_warnings_enabled", cbThermalWarningsEnabled.isChecked());
+            editor.putBoolean("thermal_suggest_eco", cbThermalSuggestEco.isChecked());
+            editor.putBoolean("thermal_auto_adjust", cbThermalAutoAdjust.isChecked());
+            String[] thermalPolicyIds = {"eco", "balanced", "performance", "unlimited"};
+            editor.putString("thermal_performance_policy", thermalPolicyIds[sThermalPolicy.getSelectedItemPosition()]);
             putGamepadPlayerConfigs(view, editor);
 
             GamepadHandler.GamepadModel gamepadModel = (GamepadHandler.GamepadModel)sGamepadModel.getAdapter().getItem(sGamepadModel.getSelectedItemPosition());
@@ -318,10 +352,15 @@ public class SettingsFragment extends Fragment {
         });
 
         String section = getArguments() != null ? getArguments().getString(SECTION_ARGUMENT) : null;
-        int targetId = SECTION_DXVK_MANAGER.equals(section) ? R.id.DXVKManagerSection :
-                SECTION_GRAPHICS_DRIVERS.equals(section) ? R.id.GraphicsDriversManagerSection :
-                SECTION_WINE_MANAGER.equals(section) ? R.id.LLWineInstallation :
-                SECTION_BOX64.equals(section) ? R.id.Box64SettingsSection : View.NO_ID;
+        if (SECTION_RUNTIME_MANAGER.equals(section)) {
+            return createRuntimeManagerView(inflater, view);
+        }
+
+        hideManagedSection(view.findViewById(R.id.GraphicsDriversManagerSection));
+        hideManagedSection(view.findViewById(R.id.DXVKManagerSection));
+        hideManagedSection(view.findViewById(R.id.GraphicsWrapperManagerSection));
+        view.findViewById(R.id.LLWineInstallation).setVisibility(View.GONE);
+        int targetId = SECTION_BOX64.equals(section) ? R.id.Box64SettingsSection : View.NO_ID;
         if (targetId != View.NO_ID) {
             View target = view.findViewById(targetId);
             View scrollView = view.findViewById(R.id.SettingsScrollView);
@@ -336,6 +375,65 @@ public class SettingsFragment extends Fragment {
             });
         }
         return view;
+    }
+
+    private void hideManagedSection(View section) {
+        section.setVisibility(View.GONE);
+        ViewGroup parent = (ViewGroup)section.getParent();
+        int index = parent.indexOfChild(section);
+        if (index > 0 && parent.getChildAt(index - 1) instanceof TextView) {
+            parent.getChildAt(index - 1).setVisibility(View.GONE);
+        }
+    }
+
+    private View createRuntimeManagerView(LayoutInflater inflater, View settingsView) {
+        View runtimeView = inflater.inflate(R.layout.runtime_manager_fragment, null, false);
+        LinearLayout content = runtimeView.findViewById(R.id.LLRuntimeCategoryContent);
+        View wine = settingsView.findViewById(R.id.LLWineInstallation);
+        View dxvk = settingsView.findViewById(R.id.DXVKManagerSection);
+        View drivers = settingsView.findViewById(R.id.GraphicsDriversManagerSection);
+        View wrappersHeading = settingsView.findViewById(R.id.TVGraphicsWrapperManagerHeading);
+        View wrappers = settingsView.findViewById(R.id.GraphicsWrapperManagerSection);
+
+        ((ViewGroup)wine.getParent()).removeView(wine);
+        ((ViewGroup)dxvk.getParent()).removeView(dxvk);
+        ((ViewGroup)drivers.getParent()).removeView(drivers);
+        ((ViewGroup)wrappersHeading.getParent()).removeView(wrappersHeading);
+        ((ViewGroup)wrappers.getParent()).removeView(wrappers);
+        content.addView(wine);
+        content.addView(dxvk);
+        content.addView(drivers);
+        content.addView(wrappersHeading);
+        content.addView(wrappers);
+
+        Spinner categorySpinner = runtimeView.findViewById(R.id.SRuntimeCategory);
+        TextView description = runtimeView.findViewById(R.id.TVRuntimeCategoryDescription);
+        int[] categories = {R.string.runtime_manager_wine_description,
+                R.string.runtime_manager_dxvk_description,
+                R.string.runtime_manager_drivers_description,
+                R.string.runtime_manager_wrappers_description};
+        View[] categoryViews = {wine, dxvk, drivers, wrappersHeading, wrappers};
+        categorySpinner.setSelection(0, false);
+        categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View selectedView, int position, long id) {
+                description.setText(categories[position]);
+                for (int i = 0; i < categoryViews.length; i++) {
+                    boolean visible = i == position || position == 3 && i == 4;
+                    categoryViews[i].setVisibility(visible ? View.VISIBLE : View.GONE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        description.setText(categories[0]);
+        wine.setVisibility(View.VISIBLE);
+        dxvk.setVisibility(View.GONE);
+        drivers.setVisibility(View.GONE);
+        wrappersHeading.setVisibility(View.GONE);
+        wrappers.setVisibility(View.GONE);
+        return runtimeView;
     }
 
     private void loadGamepadModelSpinner(Spinner sGamepadModel) {
@@ -457,6 +555,29 @@ public class SettingsFragment extends Fragment {
         rows.removeAllViews();
 
         Context context = getContext();
+        TextView gpuSummary = view.findViewById(R.id.TVGpuCapabilitySummary);
+        GpuCapabilityProfile[] profile = new GpuCapabilityProfile[1];
+        view.findViewById(R.id.BTExportGpuDiagnostics).setOnClickListener(button -> {
+            if (profile[0] == null || getActivity() == null) return;
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.gpu_diagnostics_title));
+            shareIntent.putExtra(Intent.EXTRA_TEXT, profile[0].toDiagnosticText());
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.export_gpu_diagnostics)));
+        });
+        Thread probeThread = new Thread(() -> {
+            GpuCapabilityProfile detected = MaliCapabilityProbe.probe(context);
+            gpuSummary.post(() -> {
+                if (!isAdded()) return;
+                profile[0] = detected;
+                gpuSummary.setText(detected.toDiagnosticText());
+            });
+        }, "vanta-gpu-capability-probe");
+        probeThread.setDaemon(true);
+        probeThread.start();
+
+        showGraphicsRuntimePackages(view);
+
         String[] defaultDrivers = GraphicsDrivers.parseIdentifiers(GraphicsDrivers.getDefaultDriver(context));
         String[] drivers = {
                 GraphicsDrivers.TURNIP,
@@ -485,6 +606,152 @@ public class SettingsFragment extends Fragment {
             params.bottomMargin = (int)UnitUtils.dpToPx(6);
             rows.addView(row, params);
         }
+    }
+
+    private void showGraphicsRuntimePackages(View view) {
+        LinearLayout drivers = view.findViewById(R.id.LLGraphicsRuntimePackages);
+        LinearLayout wrappers = view.findViewById(R.id.LLGraphicsWrapperPackages);
+        drivers.removeAllViews();
+        wrappers.removeAllViews();
+        long refreshId = graphicsPackageRefreshId.incrementAndGet();
+
+        view.findViewById(R.id.BTImportGraphicsDriver).setOnClickListener(button ->
+                chooseGraphicsRuntimePackage(GraphicsRuntimePackage.Kind.VULKAN_DRIVER, view));
+        view.findViewById(R.id.BTImportGraphicsWrapper).setOnClickListener(button ->
+                chooseGraphicsRuntimePackage(GraphicsRuntimePackage.Kind.VULKAN_WRAPPER, view));
+
+        Context appContext = requireContext().getApplicationContext();
+        Thread scanThread = new Thread(() -> {
+            List<GraphicsRuntimePackage> packages = GraphicsRuntimePackageStore.getInstalledPackages(appContext);
+            drivers.post(() -> {
+                if (!isAdded() || graphicsPackageRefreshId.get() != refreshId) return;
+                drivers.removeAllViews();
+                wrappers.removeAllViews();
+                for (GraphicsRuntimePackage runtimePackage : packages) {
+                    LinearLayout target = runtimePackage.kind == GraphicsRuntimePackage.Kind.VULKAN_DRIVER ? drivers : wrappers;
+                    addGraphicsPackageRow(target, runtimePackage);
+                }
+                if (drivers.getChildCount() == 0) addEmptyPackageMessage(drivers, R.string.no_graphics_drivers_installed);
+                if (wrappers.getChildCount() == 0) addEmptyPackageMessage(wrappers, R.string.no_graphics_wrappers_installed);
+            });
+        }, "vanta-graphics-package-scan");
+        scanThread.setDaemon(true);
+        scanThread.start();
+    }
+
+    private void addEmptyPackageMessage(LinearLayout target, int message) {
+        TextView text = new TextView(requireContext());
+        text.setText(message);
+        text.setTextColor(AppUtils.getThemeColor(requireContext(), R.attr.colorSecondaryText));
+        text.setTextSize(13);
+        int padding = (int)UnitUtils.dpToPx(10);
+        text.setPadding(padding, padding, padding, padding);
+        target.addView(text);
+    }
+
+    private void addGraphicsPackageRow(LinearLayout target, GraphicsRuntimePackage runtimePackage) {
+        Context context = requireContext();
+        LinearLayout card = new LinearLayout(context);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding((int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(10),
+                (int)UnitUtils.dpToPx(12), (int)UnitUtils.dpToPx(8));
+        card.setBackgroundResource(R.drawable.vanta_card_background);
+
+        TextView details = new TextView(context);
+        String status = runtimePackage.experimental ? getString(R.string.graphics_package_experimental) :
+                getString(R.string.graphics_package_manual);
+        details.setText(getString(R.string.graphics_package_row, runtimePackage.name, runtimePackage.version,
+                runtimePackage.kind.name().replace('_', ' '), runtimePackage.upstream, runtimePackage.license,
+                runtimePackage.abi, runtimePackage.sha256, status, runtimePackage.revision,
+                runtimePackage.loader, runtimePackage.gpuFamilies, runtimePackage.gpuModels,
+                runtimePackage.scheduler, runtimePackage.kernelRequirement,
+                runtimePackage.kbaseRequirement, runtimePackage.vulkanVersion,
+                runtimePackage.limitations));
+        details.setTextColor(AppUtils.getThemeColor(context, R.attr.colorPrimaryText));
+        details.setTextSize(12);
+        card.addView(details);
+
+        androidx.appcompat.widget.AppCompatButton remove = new androidx.appcompat.widget.AppCompatButton(context);
+        remove.setText(R.string.graphics_package_remove);
+        remove.setOnClickListener(button -> {
+            if (GraphicsRuntimePackageStore.isInUse(context, runtimePackage)) {
+                AppUtils.showToast(context, R.string.component_in_use);
+                return;
+            }
+            ContentDialog.confirm(context, R.string.do_you_want_to_remove_this_component_version, () -> {
+                if (GraphicsRuntimePackageStore.remove(context, runtimePackage)) {
+                    showGraphicsRuntimePackages(requireView());
+                }
+                else AppUtils.showToast(context, R.string.component_removal_failed);
+            });
+        });
+        LinearLayout.LayoutParams removeParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, (int)UnitUtils.dpToPx(40));
+        removeParams.topMargin = (int)UnitUtils.dpToPx(4);
+        card.addView(remove, removeParams);
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardParams.bottomMargin = (int)UnitUtils.dpToPx(6);
+        target.addView(card, cardParams);
+    }
+
+    private void chooseGraphicsRuntimePackage(GraphicsRuntimePackage.Kind kind, View refreshView) {
+        Activity activity = getActivity();
+        if (!(activity instanceof MainActivity)) return;
+        MainActivity mainActivity = (MainActivity)activity;
+        mainActivity.setOpenFileCallback(uri -> {
+            if (uri == null || !isAdded()) return;
+            preloaderDialog.show(R.string.validating_component_package);
+            File archive = new File(activity.getCacheDir(), "graphics-runtime-import-" + java.util.UUID.randomUUID() + ".zip");
+            Thread importThread = new Thread(() -> {
+                GraphicsRuntimePackage installed = null;
+                Exception failure = null;
+                try (InputStream input = activity.getContentResolver().openInputStream(uri);
+                     FileOutputStream output = new FileOutputStream(archive)) {
+                    if (input == null) throw new IOException("Unable to open the selected package.");
+                    byte[] buffer = new byte[16 * 1024];
+                    long total = 0;
+                    int count;
+                    while ((count = input.read(buffer)) != -1) {
+                        total += count;
+                        if (total > 512L * 1024 * 1024) throw new IOException("Graphics package archive exceeds 512 MiB.");
+                        output.write(buffer, 0, count);
+                    }
+                    output.getFD().sync();
+                    installed = GraphicsRuntimePackageStore.install(activity, archive, kind);
+                }
+                catch (Exception e) {
+                    failure = e;
+                }
+                finally {
+                    FileUtils.delete(archive);
+                }
+
+                GraphicsRuntimePackage result = installed;
+                Exception error = failure;
+                activity.runOnUiThread(() -> {
+                    preloaderDialog.close();
+                    if (!isAdded() || activity.isFinishing()) return;
+                    if (error != null) {
+                        ContentDialog dialog = new ContentDialog(activity);
+                        dialog.setTitle(R.string.graphics_package_invalid);
+                        dialog.setMessage(error.getMessage());
+                        dialog.show();
+                    }
+                    else {
+                        showGraphicsRuntimePackages(refreshView);
+                        AppUtils.showToast(activity, R.string.graphics_package_installed);
+                    }
+                });
+            }, "vanta-graphics-package-import");
+            importThread.setDaemon(true);
+            importThread.start();
+        });
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        mainActivity.startActivityForResult(intent, MainActivity.OPEN_FILE_REQUEST_CODE);
     }
 
     private int getTurnipContainerUseCount(String version) {

@@ -137,5 +137,14 @@
                 android:includeFontPadding="false"
                 android:maxLines="1" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/TVCompleteTelemetry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:textColor="#ffffff"
+            android:textSize="11sp"
+            android:includeFontPadding="false" />
     </LinearLayout>
 </LinearLayout>

@@ -428,7 +428,10 @@ public class ControlElement {
         Paint paint = inputControlsView.getPaint();
         int lightColor = getLightColor();
 
-        paint.setColor(propertyFlags.isSet(FLAG_SELECTED) ? getHighlightColor() : lightColor);
+        boolean selected = propertyFlags.isSet(FLAG_SELECTED);
+        boolean isPressed = propertyFlags.isSet(FLAG_PRESSED);
+        int neutralBorderColor = getNeutralBorderColor();
+        paint.setColor(selected ? getHighlightColor() : (isPressed ? getHighlightColor() : neutralBorderColor));
         paint.setStyle(Paint.Style.STROKE);
         float strokeWidth = snappingSize * 0.25f;
         paint.setStrokeWidth(strokeWidth);
@@ -437,11 +440,12 @@ public class ControlElement {
         switch (type) {
             case BUTTON:
             case MIDI_KEY: {
-                if (propertyFlags.isSet(FLAG_PRESSED)) paint.setStyle(Paint.Style.FILL);
-
                 float cx = boundingBox.centerX();
                 float cy = boundingBox.centerY();
+                float radius = snappingSize * 0.75f * scale;
 
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(isPressed ? getPressedColor() : getSurfaceColor());
                 switch (shape) {
                     case CIRCLE:
                         canvas.drawCircle(cx, cy, boundingBox.width() * 0.5f, paint);
@@ -450,15 +454,31 @@ public class ControlElement {
                         canvas.drawRect(boundingBox, paint);
                         break;
                     case ROUND_RECT: {
-                        float radius = boundingBox.height() * 0.5f;
                         canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
                         break;
                     }
                     case SQUARE: {
-                        float radius = snappingSize * 0.75f * scale;
                         canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
                         break;
                     }
+                }
+
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(strokeWidth);
+                paint.setColor(selected || isPressed ? getHighlightColor() : neutralBorderColor);
+                switch (shape) {
+                    case CIRCLE:
+                        canvas.drawCircle(cx, cy, boundingBox.width() * 0.5f, paint);
+                        break;
+                    case RECT:
+                        canvas.drawRect(boundingBox, paint);
+                        break;
+                    case ROUND_RECT:
+                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        break;
+                    case SQUARE:
+                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        break;
                 }
 
                 if (iconId > 0) {
@@ -469,7 +489,7 @@ public class ControlElement {
                     paint.setTextSize(Math.min(getTextSizeForWidth(paint, text, boundingBox.width() - strokeWidth * 2), snappingSize * 2 * scale));
                     paint.setTextAlign(Paint.Align.CENTER);
                     paint.setStyle(Paint.Style.FILL);
-                    paint.setColor(propertyFlags.isSet(FLAG_PRESSED) ? getDarkColor() : lightColor);
+                    paint.setColor(lightColor);
                     canvas.drawText(text, x, (y - ((paint.descent() + paint.ascent()) * 0.5f)), paint);
                 }
                 break;
@@ -477,42 +497,42 @@ public class ControlElement {
             case D_PAD: {
                 float cx = boundingBox.centerX();
                 float cy = boundingBox.centerY();
-                float offsetX = snappingSize * 2 * scale;
-                float offsetY = snappingSize * 3 * scale;
-                float start = snappingSize * scale;
+                float halfArmWidth = Math.min(boundingBox.width(), boundingBox.height()) * 0.19f;
 
                 if (paths == null) {
-                    Path path = new Path();
-                    path.moveTo(cx, cy - start);
-                    path.lineTo(cx - offsetX, cy - offsetY);
-                    path.lineTo(cx - offsetX, boundingBox.top);
-                    path.lineTo(cx + offsetX, boundingBox.top);
-                    path.lineTo(cx + offsetX, cy - offsetY);
-                    path.close();
+                    Path cross = new Path();
+                    cross.moveTo(cx - halfArmWidth, boundingBox.top);
+                    cross.lineTo(cx + halfArmWidth, boundingBox.top);
+                    cross.lineTo(cx + halfArmWidth, cy - halfArmWidth);
+                    cross.lineTo(boundingBox.right, cy - halfArmWidth);
+                    cross.lineTo(boundingBox.right, cy + halfArmWidth);
+                    cross.lineTo(cx + halfArmWidth, cy + halfArmWidth);
+                    cross.lineTo(cx + halfArmWidth, boundingBox.bottom);
+                    cross.lineTo(cx - halfArmWidth, boundingBox.bottom);
+                    cross.lineTo(cx - halfArmWidth, cy + halfArmWidth);
+                    cross.lineTo(boundingBox.left, cy + halfArmWidth);
+                    cross.lineTo(boundingBox.left, cy - halfArmWidth);
+                    cross.lineTo(cx - halfArmWidth, cy - halfArmWidth);
+                    cross.close();
 
-                    path.moveTo(cx - start, cy);
-                    path.lineTo(cx - offsetY, cy - offsetX);
-                    path.lineTo(boundingBox.left, cy - offsetX);
-                    path.lineTo(boundingBox.left, cy + offsetX);
-                    path.lineTo(cx - offsetY, cy + offsetX);
-                    path.close();
-
-                    path.moveTo(cx, cy + start);
-                    path.lineTo(cx - offsetX, cy + offsetY);
-                    path.lineTo(cx - offsetX, boundingBox.bottom);
-                    path.lineTo(cx + offsetX, boundingBox.bottom);
-                    path.lineTo(cx + offsetX, cy + offsetY);
-                    path.close();
-
-                    path.moveTo(cx + start, cy);
-                    path.lineTo(cx + offsetY, cy - offsetX);
-                    path.lineTo(boundingBox.right, cy - offsetX);
-                    path.lineTo(boundingBox.right, cy + offsetX);
-                    path.lineTo(cx + offsetY, cy + offsetX);
-                    path.close();
-                    paths = new Path[]{path};
+                    Path[] arms = new Path[]{cross, new Path(), new Path(), new Path(), new Path()};
+                    arms[1].addRect(cx - halfArmWidth, boundingBox.top, cx + halfArmWidth, cy, Path.Direction.CW);
+                    arms[2].addRect(cx, cy - halfArmWidth, boundingBox.right, cy + halfArmWidth, Path.Direction.CW);
+                    arms[3].addRect(cx - halfArmWidth, cy, cx + halfArmWidth, boundingBox.bottom, Path.Direction.CW);
+                    arms[4].addRect(boundingBox.left, cy - halfArmWidth, cx, cy + halfArmWidth, Path.Direction.CW);
+                    paths = arms;
                 }
 
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(getSurfaceColor());
+                canvas.drawPath(paths[0], paint);
+                paint.setColor(getPressedColor());
+                for (int i = 0; i < states.length && i < 4; i++) {
+                    if (states[i]) canvas.drawPath(paths[i + 1], paint);
+                }
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(strokeWidth);
+                paint.setColor(selected ? getHighlightColor() : neutralBorderColor);
                 canvas.drawPath(paths[0], paint);
                 break;
             }
@@ -534,6 +554,11 @@ public class ControlElement {
                     float lineTop = boundingBox.top + strokeWidth * 0.5f;
                     float lineBottom = boundingBox.bottom - strokeWidth * 0.5f;
                     float startX = boundingBox.left;
+                    paint.setStyle(Paint.Style.FILL);
+                    paint.setColor(getSurfaceColor());
+                    canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setColor(selected ? getHighlightColor() : neutralBorderColor);
                     canvas.drawRoundRect(startX, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
 
                     if (paths == null) {
@@ -549,7 +574,7 @@ public class ControlElement {
                     for (byte i = rangeIndex[0]; i < rangeIndex[1]; i++) {
                         int index = i % range.max;
                         paint.setStyle(Paint.Style.STROKE);
-                        paint.setColor(oldColor);
+                        paint.setColor(neutralBorderColor);
                         boolean pressed = propertyFlags.isSet(FLAG_PRESSED) && selectedBinding == getRangeBindingForIndex(range, index);
 
                         if (startX > boundingBox.left && startX  < boundingBox.right && !pressed && !wasPressed) {
@@ -561,7 +586,7 @@ public class ControlElement {
                             paint.setStyle(Paint.Style.FILL);
 
                             if (pressed) {
-                                paint.setColor(lightColor);
+                                paint.setColor(getPressedColor());
                                 canvas.drawRect(startX, lineTop, startX + elementSize, lineBottom, paint);
                             }
 
@@ -583,6 +608,11 @@ public class ControlElement {
                     float lineLeft = boundingBox.left + strokeWidth * 0.5f;
                     float lineRight = boundingBox.right - strokeWidth * 0.5f;
                     float startY = boundingBox.top;
+                    paint.setStyle(Paint.Style.FILL);
+                    paint.setColor(getSurfaceColor());
+                    canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setColor(selected ? getHighlightColor() : neutralBorderColor);
                     canvas.drawRoundRect(boundingBox.left, startY, boundingBox.right, boundingBox.bottom, radius, radius, paint);
 
                     if (paths == null) {
@@ -598,7 +628,7 @@ public class ControlElement {
                     for (byte i = rangeIndex[0]; i < rangeIndex[1]; i++) {
                         int index = i % range.max;
                         paint.setStyle(Paint.Style.STROKE);
-                        paint.setColor(oldColor);
+                        paint.setColor(neutralBorderColor);
                         boolean pressed = propertyFlags.isSet(FLAG_PRESSED) && selectedBinding == getRangeBindingForIndex(range, index);
 
                         if (startY > boundingBox.top && startY < boundingBox.bottom && !pressed && !wasPressed) {
@@ -610,7 +640,7 @@ public class ControlElement {
                             paint.setStyle(Paint.Style.FILL);
 
                             if (pressed) {
-                                paint.setColor(lightColor);
+                                paint.setColor(getPressedColor());
                                 canvas.drawRect(lineLeft, startY, lineRight, startY + elementSize, paint);
                             }
 
@@ -634,29 +664,46 @@ public class ControlElement {
                 int cx = boundingBox.centerX();
                 int cy = boundingBox.centerY();
                 int oldColor = paint.getColor();
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(getSurfaceColor());
+                canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(selected ? getHighlightColor() : neutralBorderColor);
                 canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
 
                 float thumbstickX = currentPosition != null ? currentPosition.x : cx;
                 float thumbstickY = currentPosition != null ? currentPosition.y : cy;
 
                 short thumbRadius = (short) (snappingSize * 3.5f * scale);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(getPressedColor());
+                paint.setStrokeWidth(strokeWidth * 0.8f);
+                canvas.drawLine(cx, cy, thumbstickX, thumbstickY, paint);
+                canvas.drawCircle(cx, cy, boundingBox.height() * 0.33f, paint);
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(ColorUtils.setAlphaComponent(lightColor, 50));
+                paint.setColor(getSurfaceColor());
                 canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius, paint);
 
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setColor(oldColor);
+                paint.setStrokeWidth(strokeWidth);
+                paint.setColor(thumbstickX != cx || thumbstickY != cy ? getHighlightColor() : oldColor);
                 canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius + strokeWidth * 0.5f, paint);
                 break;
             }
             case TRACKPAD: {
                 float radius = boundingBox.height() * 0.15f;
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(isPressed ? getPressedColor() : getSurfaceColor());
+                canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(selected ? getHighlightColor() : neutralBorderColor);
                 canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
                 float offset = strokeWidth * 2.5f;
                 float innerStrokeWidth = strokeWidth * 2;
                 float innerHeight = boundingBox.height() - offset * 2;
                 radius = (innerHeight / boundingBox.height()) * radius - (innerStrokeWidth * 0.5f + strokeWidth * 0.5f);
                 paint.setStrokeWidth(innerStrokeWidth);
+                paint.setColor(getNeutralBorderColor());
                 canvas.drawRoundRect(boundingBox.left + offset, boundingBox.top + offset, boundingBox.right - offset, boundingBox.bottom - offset, radius, radius, paint);
                 break;
             }
@@ -958,6 +1005,7 @@ public class ControlElement {
                     inputControlsView.handleInputEvent(binding, state, value);
                     this.states[i] = state;
                 }
+                inputControlsView.invalidate();
             }
 
             return true;
@@ -1024,6 +1072,9 @@ public class ControlElement {
                 else if (type == Type.STICK) {
                     inputControlsView.invalidate();
                 }
+                else if (type == Type.D_PAD) {
+                    inputControlsView.invalidate();
+                }
 
                 if (currentPosition != null) currentPosition = null;
             }
@@ -1088,6 +1139,21 @@ public class ControlElement {
     }
 
     public int getHighlightColor() {
-        return Color.argb((int)(inputControlsView.getOverlayOpacity() * 255), 2, 119, 189);
+        return Color.argb((int)(inputControlsView.getOverlayOpacity() * 255), 139, 92, 246);
+    }
+
+    private int getPressedColor() {
+        float opacity = this.opacity * inputControlsView.getOverlayOpacity();
+        return Color.argb((int)(opacity * 72), 139, 92, 246);
+    }
+
+    private int getSurfaceColor() {
+        float opacity = this.opacity * inputControlsView.getOverlayOpacity();
+        return Color.argb((int)(opacity * 156), 24, 22, 31);
+    }
+
+    private int getNeutralBorderColor() {
+        float opacity = this.opacity * inputControlsView.getOverlayOpacity();
+        return Color.argb((int)(opacity * 190), 164, 160, 174);
     }
 }

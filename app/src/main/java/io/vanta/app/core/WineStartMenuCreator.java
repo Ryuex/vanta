@@ -22,13 +22,15 @@ public abstract class WineStartMenuCreator {
         else return MSLink.SW_SHOWNORMAL;
     }
 
-    private static void createMenuEntry(JSONObject item, File currentDir) throws JSONException {
+    private static void createMenuEntry(JSONObject item, File currentDir, File iconDirectory, Context context) throws JSONException {
         if (item.has("children")) {
             currentDir = new File(currentDir, item.getString("name"));
             currentDir.mkdirs();
 
             JSONArray children = item.getJSONArray("children");
-            for (int i = 0; i < children.length(); i++) createMenuEntry(children.getJSONObject(i), currentDir);
+            for (int i = 0; i < children.length(); i++) {
+                createMenuEntry(children.getJSONObject(i), currentDir, iconDirectory, context);
+            }
         }
         else {
             File outputFile = new File(currentDir, item.getString("name")+".lnk");
@@ -37,6 +39,15 @@ public abstract class WineStartMenuCreator {
             linkInfo.arguments = item.optString("cmdArgs");
             linkInfo.iconLocation = item.optString("iconLocation", linkInfo.targetPath);
             linkInfo.iconIndex = item.optInt("iconIndex", 0);
+            String iconAsset = item.optString("iconAsset");
+            if (!iconAsset.isEmpty()) {
+                File iconFile = new File(iconDirectory, FileUtils.getName(iconAsset));
+                FileUtils.copy(context, iconAsset, iconFile);
+                if (iconFile.isFile()) {
+                    linkInfo.iconLocation = "C:\\ProgramData\\Vanta\\Icons\\"+iconFile.getName();
+                    linkInfo.iconIndex = 0;
+                }
+            }
             if (item.has("showCommand")) linkInfo.showCommand = parseShowCommand(item.getString("showCommand"));
             MSLink.createFile(linkInfo, outputFile);
         }
@@ -68,12 +79,16 @@ public abstract class WineStartMenuCreator {
     public static void create(Context context, Container container) {
         File startMenuDir = container.getStartMenuDir();
         File containerStartMenuFile = new File(container.getRootDir(), ".startmenu");
+        File iconDirectory = new File(container.getRootDir(), ".wine/drive_c/ProgramData/Vanta/Icons");
+        iconDirectory.mkdirs();
         removeOldMenu(containerStartMenuFile, startMenuDir);
 
         try {
             JSONArray data = new JSONArray(FileUtils.readString(context, "wine_startmenu.json"));
             FileUtils.writeString(containerStartMenuFile, data.toString());
-            for (int i = 0; i < data.length(); i++) createMenuEntry(data.getJSONObject(i), startMenuDir);
+            for (int i = 0; i < data.length(); i++) {
+                createMenuEntry(data.getJSONObject(i), startMenuDir, iconDirectory, context);
+            }
         }
         catch (JSONException e) {}
     }

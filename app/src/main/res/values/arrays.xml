@@ -73,6 +73,12 @@
         <item>@string/recommendation_compatibility</item>
         <item>@string/recommendation_performance</item>
     </string-array>
+    <string-array name="runtime_manager_categories">
+        <item>@string/wine_manager</item>
+        <item>@string/dxvk_manager</item>
+        <item>@string/graphics_driver_manager</item>
+        <item>@string/graphics_wrapper_manager</item>
+    </string-array>
     <string-array name="ddraw_wrapper_entries">
         <item>WineD3D</item>
         <item>CNC DDraw</item>
@@ -104,6 +110,12 @@
         <item>@string/startup_selection_normal</item>
         <item>@string/startup_selection_essential</item>
         <item>@string/startup_selection_aggressive</item>
+    </string-array>
+    <string-array name="thermal_performance_policies">
+        <item>@string/thermal_policy_eco</item>
+        <item>@string/thermal_policy_balanced</item>
+        <item>@string/thermal_policy_performance</item>
+        <item>@string/thermal_policy_unlimited</item>
     </string-array>
     <string-array name="audio_performance_mode_entries">
         <item>@string/none</item>
