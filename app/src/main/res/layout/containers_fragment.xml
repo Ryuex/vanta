@@ -30,21 +30,13 @@
             android:textColor="?attr/colorSecondaryText"
             android:textSize="14sp" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/BTNewContainer"
+            style="@style/VantaPrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="16dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="@string/new_container"
-            android:textAllCaps="false"
-            android:textColor="#ffffff"
-            android:textSize="15sp"
-            app:backgroundTint="#7c3aed"
-            app:cornerRadius="14dp"
-            app:icon="@drawable/icon_add"
-            app:iconTint="#ffffff" />
+            android:text="@string/new_container" />
     </LinearLayout>
 
     <FrameLayout
