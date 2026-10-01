@@ -45,10 +45,12 @@ import io.vanta.app.core.Callback;
 import io.vanta.app.container.DXWrapperPicker;
 import io.vanta.app.core.EnvVars;
 import io.vanta.app.core.FileUtils;
+import io.vanta.app.core.GeneralComponents;
 import io.vanta.app.container.GraphicsDriverPicker;
 import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.PreloaderDialog;
 import io.vanta.app.core.StringUtils;
+import io.vanta.app.core.DefaultVersion;
 import io.vanta.app.core.WineInfo;
 import io.vanta.app.core.WineInstaller;
 import io.vanta.app.core.WineRegistryEditor;
@@ -132,7 +134,9 @@ public class ContainerDetailFragment extends Fragment {
 
         final ArrayList<WineInfo> wineInfos = WineInstaller.getInstalledWineInfos(context);
         final Spinner sWineVersion = view.findViewById(R.id.SWineVersion);
-        if (wineInfos.size() > 1) loadWineVersionSpinner(view, sWineVersion, wineInfos);
+        view.findViewById(R.id.TVCompatibilitySection).setVisibility(View.VISIBLE);
+        view.findViewById(R.id.LLWineVersion).setVisibility(wineInfos.size() > 1 ? View.VISIBLE : View.GONE);
+        loadWineVersionSpinner(view, sWineVersion, wineInfos);
 
         loadScreenSizeSpinner(view, isEditMode() ? container.getScreenSize() : Container.DEFAULT_SCREEN_SIZE);
 
@@ -165,6 +169,11 @@ public class ContainerDetailFragment extends Fragment {
 
         final Spinner sBox64Preset = view.findViewById(R.id.SBox64Preset);
         Box64PresetManager.loadSpinner(sBox64Preset, isEditMode() ? container.getBox64Preset() : preferences.getString("box64_preset", Box64Preset.DEFAULT));
+
+        final Spinner sBox64Version = view.findViewById(R.id.SBox64Version);
+        String selectedBox64Version = isEditMode() && !container.getBox64Version().isEmpty() ?
+                container.getBox64Version() : preferences.getString("box64_version", DefaultVersion.BOX64);
+        GeneralComponents.loadVersionSpinner(GeneralComponents.Type.BOX64, sBox64Version, selectedBox64Version, DefaultVersion.BOX64);
 
         final CPUListView cpuListView = view.findViewById(R.id.CPUListView);
         final CPUListView cpuListViewWoW64 = view.findViewById(R.id.CPUListViewWoW64);
@@ -199,6 +208,8 @@ public class ContainerDetailFragment extends Fragment {
                 String cpuListWoW64 = cpuListViewWoW64.getCheckedCPUListAsString();
                 byte startupSelection = (byte)sStartupSelection.getSelectedItemPosition();
                 String box64Preset = Box64PresetManager.getSpinnerSelectedId(sBox64Preset);
+                String box64Version = StringUtils.parseIdentifier(sBox64Version.getSelectedItem());
+                String wineVersion = wineInfos.get(sWineVersion.getSelectedItemPosition()).identifier();
                 String desktopTheme = getDesktopTheme(view);
 
                 if (isEditMode()) {
@@ -218,6 +229,8 @@ public class ContainerDetailFragment extends Fragment {
                     container.setHUDMode(hudMode);
                     container.setStartupSelection(startupSelection);
                     container.setBox64Preset(box64Preset);
+                    container.setBox64Version(box64Version);
+                    container.setWineVersion(wineVersion);
                     container.setDesktopTheme(desktopTheme);
                     container.saveData();
 
@@ -246,11 +259,10 @@ public class ContainerDetailFragment extends Fragment {
                     data.put("hudMode", hudMode);
                     data.put("startupSelection", startupSelection);
                     data.put("box64Preset", box64Preset);
+                    data.put("box64Version", box64Version);
                     data.put("desktopTheme", desktopTheme);
 
-                    if (wineInfos.size() > 1) {
-                        data.put("wineVersion", wineInfos.get(sWineVersion.getSelectedItemPosition()).identifier());
-                    }
+                    data.put("wineVersion", wineVersion);
 
                     preloaderDialog.show(R.string.creating_container);
                     manager.createContainerAsync(data, (container) -> {
@@ -545,8 +557,7 @@ public class ContainerDetailFragment extends Fragment {
 
     private void loadWineVersionSpinner(final View view, Spinner sWineVersion, final ArrayList<WineInfo> wineInfos) {
         final Context context = getContext();
-        sWineVersion.setEnabled(!isEditMode());
-        view.findViewById(R.id.LLWineVersion).setVisibility(View.VISIBLE);
+        sWineVersion.setEnabled(true);
         sWineVersion.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, wineInfos));
         if (isEditMode()) AppUtils.setSpinnerSelectionFromValue(sWineVersion, WineInfo.fromIdentifier(context, container.getWineVersion()).toString());
     }

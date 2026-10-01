@@ -2,34 +2,52 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
+    android:background="#e60e0d12"
     android:clickable="false"
     android:focusable="false">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="22dp"
-        android:paddingBottom="22dp"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp"
-        android:gravity="center_vertical"
         android:layout_gravity="center"
-        android:background="?attr/preloaderBackground">
+        android:background="@drawable/vanta_preloader_panel"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingLeft="28dp"
+        android:paddingTop="28dp"
+        android:paddingRight="28dp"
+        android:paddingBottom="28dp">
+
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/vanta_mark" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:letterSpacing="0.12"
+            android:text="@string/app_name"
+            android:textColor="?attr/colorPrimaryText"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <ProgressBar
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="22dp"
             android:indeterminate="true"
-            android:layout_marginRight="16dp"
-            android:indeterminateDrawable="?attr/progressBarIndeterminateImage" />
+            android:indeterminateTint="?attr/colorAccent" />
 
         <TextView
             android:id="@+id/TextView"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20dp"
-            android:textColor="?attr/colorPrimaryText" />
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:textColor="?attr/colorSecondaryText"
+            android:textSize="14sp" />
     </LinearLayout>
 </FrameLayout>

@@ -21,7 +21,7 @@
         <item name="radioButtonStyle">@style/RadioButton</item>
     </style>
     <style name="AppThemeLight" parent="@style/AppThemeBase">
-        <item name="colorAccent">#0288d1</item>
+        <item name="colorAccent">#a855f7</item>
         <item name="colorPrimary">#607d8b</item>
         <item name="colorPrimaryDark">#455a64</item>
         <item name="colorControlNormal">#e0e0e0</item>
@@ -29,7 +29,7 @@
         <item name="colorSecondaryText">#757575</item>
         <item name="colorPrimarySurface">#fafafa</item>
         <item name="colorSecondarySurface">#ffffff</item>
-        <item name="colorPrimaryVariant">#607d8b</item>
+        <item name="colorPrimaryVariant">#8b5cf6</item>
         <item name="colorSecondaryVariant">#d3dce0</item>
         <item name="colorError">#ef5350</item>
         <item name="popupMenuBackground">@drawable/content_dialog_background_light</item>
@@ -39,16 +39,16 @@
         <item name="progressBarIndeterminateImage">@drawable/progress_bar_indeterminate_light</item>
     </style>
     <style name="AppThemeDark" parent="@style/AppThemeBase">
-        <item name="colorAccent">#0288d1</item>
-        <item name="colorPrimary">#505963</item>
-        <item name="colorPrimaryDark">#3f474f</item>
-        <item name="colorControlNormal">#616161</item>
+        <item name="colorAccent">#a855f7</item>
+        <item name="colorPrimary">#19151f</item>
+        <item name="colorPrimaryDark">#100d16</item>
+        <item name="colorControlNormal">#77717f</item>
         <item name="colorPrimaryText">#fafafa</item>
-        <item name="colorSecondaryText">#9e9e9e</item>
-        <item name="colorPrimarySurface">#1b1e21</item>
-        <item name="colorSecondarySurface">#2d3238</item>
-        <item name="colorPrimaryVariant">#56677a</item>
-        <item name="colorSecondaryVariant">#37424f</item>
+        <item name="colorSecondaryText">#aaa4b2</item>
+        <item name="colorPrimarySurface">#0e0d12</item>
+        <item name="colorSecondarySurface">#18171f</item>
+        <item name="colorPrimaryVariant">#a78bfa</item>
+        <item name="colorSecondaryVariant">#302a3b</item>
         <item name="colorError">#ef5350</item>
         <item name="popupMenuBackground">@drawable/content_dialog_background_dark</item>
         <item name="toolboxBackground">@drawable/toolbox_dark</item>
@@ -136,6 +136,15 @@
     <style name="TextView" parent="@android:style/Widget.TextView">
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
+    </style>
+    <style name="VantaSectionLabel" parent="@style/TextView">
+        <item name="android:textColor">?attr/colorPrimaryVariant</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
     </style>
     <style name="CheckBox" parent="@android:style/Widget.CompoundButton.CheckBox">
         <item name="android:textSize">16sp</item>

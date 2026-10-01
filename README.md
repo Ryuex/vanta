@@ -37,9 +37,9 @@ components and the runtime assets of this repository originate from that project
 written from scratch, and credit for the original work belongs to the Winlator author and
 contributors. See [CREDITS.md](CREDITS.md) for the full attribution.
 
-What Vanta adds at this stage is its own repository identity (`io.vanta.app`), documentation and
-an ongoing effort to build a distinct project around the inherited codebase. New Vanta features
-are listed in the roadmap below and are explicitly **not** claimed as finished.
+Vanta adds its own visual identity and modernized Android interface, along with per-container
+compatibility selections for Wine, DXVK and Box64. It remains an open-source derivative of
+Winlator and retains upstream attribution and compatibility code.
 
 ## Features
 
@@ -48,7 +48,7 @@ are listed in the roadmap below and are explicitly **not** claimed as finished.
 Present in the current code base (inherited from Winlator and still functional in this tree):
 
 - Container management: create, edit, duplicate and run isolated Windows environments.
-- Wine runtime handling with selectable Wine version (main Wine **10.10**, extra versions installable).
+- Wine Manager for imported x86_64 Wine packages; built-in Wine **10.10** remains the fallback.
 - Graphics driver selection per container, with separate Vulkan and OpenGL choices:
   **Turnip**, **Vortek**, **Zink**, **VirGL** and **Gladio** — with configuration dialogs for
   Turnip, Vortek and VirGL.
@@ -57,25 +57,24 @@ Present in the current code base (inherited from Winlator and still functional i
   own configuration dialog (framerate cap, max device memory, custom GPU device, DDraw wrapper).
   `D7VK 1.11` and `D8VK 1.0` packages are bundled and handled by the runtime, but are not exposed
   in the wrapper picker today.
-- **Box64** `0.4.4` with presets (Stability, Conservative, Intermediate, Performance and custom presets)
-  plus full environment-variable editing, and installable Box64 versions.
+- **Box64** `0.4.4` with Compatibility, Balanced, Performance and custom presets; supported
+  Dynarec controls are based on the bundled Box64 variable definitions. Per-container Box64
+  version and preset selections reach the runtime.
 - Input controls editor, touch control profiles, external controller/gamepad bindings and gamepad models.
 - Audio: PulseAudio and ALSA backends, SoundFont selection and MIDI support.
 - File manager, shortcuts manager, task manager, active-window list, screen effects
   (brightness/contrast), storage info and Wine debug channel control.
 - In-app component installer that can download or import additional component packages.
+- **DXVK Manager** lists real bundled/imported versions, identifies bundled defaults and protects
+  in-use packages. DXVK **1.10.3** and **2.4.1** are bundled and selectable per container.
 - Custom environment variables, CPU affinity, screen size and container-level tuning options.
 
 ### PLANNED / EXPERIMENTAL
 
 Not implemented, not tested, or only at the design stage — do not treat any item below as shipped:
 
-- **Vanta interface** — a new first-party UI. Today the app still uses the upstream Winlator layout;
-  only the package identity (`io.vanta.app`) has been changed.
 - **Compatibility Manager** — curated per-game compatibility profiles.
-- **DXVK Manager** — first-class management of multiple DXVK versions inside Vanta.
 - **Turnip Manager** — multiple Turnip driver versions managed by Vanta.
-- **Box64 profiles** — richer, portable Box64 version/profile management.
 - **FEX** — FEX as an experimental translation backend (FEX is **not** present in this repository).
 - **Performance presets** — broader, cross-stack performance presets (Box64 presets already exist,
   see *Available now*).

@@ -6,13 +6,32 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingLeft="18dp"
+            android:paddingTop="8dp"
+            android:paddingRight="18dp"
+            android:paddingBottom="96dp">
+
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/section_general" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
+                android:orientation="vertical"
+                android:padding="14dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -100,12 +119,22 @@
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/TVCompatibilitySection"
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/section_compatibility" />
 
             <LinearLayout
                 android:id="@+id/LLWineVersion"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
                 android:orientation="vertical"
+                android:padding="14dp"
                 android:visibility="gone">
 
                 <TextView
@@ -118,6 +147,19 @@
                     android:layout_width="match_parent"
                     android:id="@+id/SWineVersion" />
             </LinearLayout>
+
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/section_graphics" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
+                android:orientation="vertical"
+                android:padding="14dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -152,7 +194,20 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical" />
+            </LinearLayout>
 
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/section_audio" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
+                android:orientation="vertical"
+                android:padding="14dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -176,6 +231,7 @@
                     android:id="@+id/BTAudioDriverConfig"
                     android:src="@drawable/icon_audio_settings" />
             </LinearLayout>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -188,6 +244,12 @@
                 android:layout_width="match_parent"
                 android:entries="@array/hud_mode_entries" />
 
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/section_advanced" />
+
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/TabLayout"
                 android:layout_width="match_parent"
@@ -196,6 +258,8 @@
                 android:layout_marginBottom="4dp"
                 android:background="@drawable/tab_layout_background"
                 app:tabTextColor="?attr/tabTextColor"
+                app:tabIndicatorColor="?attr/colorAccent"
+                app:tabRippleColor="#33a855f7"
                 app:tabGravity="center"
                 app:tabMode="auto">
 
@@ -475,6 +539,16 @@
                     android:layout_marginTop="8dp">
 
                     <LinearLayout style="@style/FieldSet">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/box64_version" />
+
+                        <Spinner
+                            style="@style/ComboBox"
+                            android:id="@+id/SBox64Version"
+                            android:layout_width="match_parent" />
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

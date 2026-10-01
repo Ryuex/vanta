@@ -47,6 +47,7 @@ public class Container {
     private String cpuListWoW64;
     private String desktopTheme = WineThemeManager.DEFAULT_DESKTOP_THEME;
     private String box64Preset = Box64Preset.DEFAULT;
+    private String box64Version = "";
     private File rootDir;
     private JSONObject extraData;
 
@@ -191,6 +192,14 @@ public class Container {
         this.box64Preset = box64Preset;
     }
 
+    public String getBox64Version() {
+        return box64Version;
+    }
+
+    public void setBox64Version(String box64Version) {
+        this.box64Version = box64Version != null ? box64Version : "";
+    }
+
     public File getRootDir() {
         return rootDir;
     }
@@ -302,6 +311,7 @@ public class Container {
             data.put("hudMode", hudMode);
             data.put("startupSelection", startupSelection);
             data.put("box64Preset", box64Preset);
+            if (!box64Version.isEmpty()) data.put("box64Version", box64Version);
             data.put("desktopTheme", desktopTheme);
             data.put("extraData", extraData);
 
@@ -378,6 +388,9 @@ public class Container {
                     break;
                 case "box64Preset" :
                     setBox64Preset(data.getString(key));
+                    break;
+                case "box64Version" :
+                    setBox64Version(data.getString(key));
                     break;
                 case "audioDriver" :
                     setAudioDriver(data.getString(key));

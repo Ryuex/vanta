@@ -31,6 +31,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private static int pid = -1;
     private EnvVars envVars;
     private String box64Preset = Box64Preset.CONSERVATIVE;
+    private String box64Version;
     private Callback<Integer> terminationCallback;
     private Callback<String> failureCallback;
     private Runnable startupCallback;
@@ -44,9 +45,11 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
 
             String problem;
             try {
-                extractBox64File();
-                copyDefaultBox64RCFile();
-                problem = verifyGuestExecutable();
+                problem = extractBox64File();
+                if (problem == null) {
+                    copyDefaultBox64RCFile();
+                    problem = verifyGuestExecutable();
+                }
             }
             catch (Throwable t) {
                 problem = t.getClass().getName()+(t.getMessage() != null ? ": "+t.getMessage() : "");
@@ -136,6 +139,10 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.box64Preset = box64Preset;
     }
 
+    public void setBox64Version(String box64Version) {
+        this.box64Version = box64Version;
+    }
+
     private int execGuestProgram() {
         RootFS rootFS = environment.getRootFS();
         File rootDir = rootFS.getRootDir();
@@ -168,16 +175,25 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         }, true);
     }
 
-    private void extractBox64File() {
+    private String extractBox64File() {
         Context context = environment.getContext();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String box64Version = preferences.getString("box64_version", DefaultVersion.BOX64);
+        String selectedVersion = box64Version != null && !box64Version.isEmpty() ?
+                box64Version : preferences.getString("box64_version", DefaultVersion.BOX64);
         String currentBox64Version = preferences.getString("current_box64_version", "");
 
-        if (!box64Version.equals(currentBox64Version)) {
-            GeneralComponents.extractFile(GeneralComponents.Type.BOX64, context, box64Version, DefaultVersion.BOX64);
-            preferences.edit().putString("current_box64_version", box64Version).apply();
+        if (!GeneralComponents.getAvailableComponentNames(GeneralComponents.Type.BOX64, context).contains(selectedVersion)) {
+            return context.getString(R.string.box64_component_unavailable, selectedVersion);
         }
+
+        File box64Binary = new File(environment.getRootFS().getRootDir(), "/usr/local/bin/box64");
+        if (!selectedVersion.equals(currentBox64Version) || !box64Binary.isFile()) {
+            if (!GeneralComponents.extractFile(GeneralComponents.Type.BOX64, context, selectedVersion, DefaultVersion.BOX64)) {
+                return context.getString(R.string.box64_component_extract_failed, selectedVersion);
+            }
+            preferences.edit().putString("current_box64_version", selectedVersion).apply();
+        }
+        return null;
     }
 
     private void copyDefaultBox64RCFile() {

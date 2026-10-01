@@ -1,0 +1,971 @@
+VANTA BUILD 3 — CONTINUE THE EXISTING OPENCODE/MIMO DEVELOPMENT FLOW
+
+IMPORTANT CONTINUITY INSTRUCTION
+
+You are taking over an existing development workflow that was previously being handled by the OpenCode agent using MiMo.
+
+DO NOT restart this project.
+DO NOT recreate the project.
+DO NOT revert previous work.
+DO NOT assume the upstream Winlator repository represents the current state.
+DO NOT replace working implementations just because you would have implemented them differently.
+
+Continue from the EXACT CURRENT STATE of the repository.
+
+The repository itself is the source of truth.
+
+Before making changes:
+
+1. Inspect the current Git state.
+2. Inspect the current branch.
+3. Inspect existing uncommitted changes.
+4. Inspect the implementation left by the previous MiMo/OpenCode workflow.
+5. Understand the Build 2 fixes before modifying related code.
+6. Continue the same incremental development strategy.
+
+You are authorized to directly edit files in this repository and execute the terminal commands required to implement this phase.
+
+Work on:
+
+vanta-dev
+
+DO NOT modify:
+
+main
+baseline-winlator-buildable
+
+DO NOT git push.
+
+DO NOT discard existing uncommitted work.
+
+==================================================
+PROJECT
+==================================================
+
+Project name:
+
+Vanta
+
+Vanta is an Android Windows compatibility platform based on Winlator.
+
+The project uses technologies including:
+
+Wine
+Wine WoW64
+Box64
+Box86 where applicable
+DXVK
+VKD3D
+Mesa
+Turnip
+Vulkan
+OpenGL
+Android native components
+
+This phase is:
+
+VANTA BUILD 3
+
+==================================================
+CURRENT VERIFIED STATE
+==================================================
+
+Build 2 has already been physically tested on a real Android device.
+
+CONFIRMED WORKING:
+
+- APK builds.
+- APK installs.
+- Vanta launches.
+- RootFS extraction works.
+- Containers can be created.
+- Containers now successfully start.
+- Wine/container desktop opens.
+- The previous infinite "Starting" problem has been fixed.
+- Startup diagnostics were added.
+- Startup failure handling was added.
+- Android identity migration to io.vanta.app is active.
+- Compatibility handling for legacy paths exists where required.
+
+This is extremely important:
+
+BUILD 2 CONTAINER STARTUP IS A PROTECTED FUNCTIONAL BASELINE.
+
+Do not sacrifice this working behavior for refactoring, visual changes or newer component versions.
+
+==================================================
+PREVIOUS BUILD 2 ROOT CAUSE
+==================================================
+
+The previous development agent diagnosed an important migration/runtime issue.
+
+Some precompiled components still contained absolute paths referencing:
+
+/data/data/com.winlator/
+
+The application now uses:
+
+io.vanta.app
+
+A critical Box64 ELF PT_INTERP path was still pointing to the old Winlator application directory, preventing Box64 from executing.
+
+This caused the guest process to never start and the UI to remain indefinitely at:
+
+Starting...
+
+The previous workflow repaired the affected precompiled components using controlled same-length path replacement where technically safe.
+
+Affected component archives reportedly included items such as:
+
+box64-0.4.4.tzst
+virgl-23.1.9
+vortek-2.1
+gladio-1.1
+turnip-26.2.0
+
+The previous agent also added mechanisms including:
+
+StartupStatus
+ComponentPaths
+startup.log
+runtime Box64 verification/repair
+real startup stages
+guest execution failure reporting
+startup watchdog/error handling
+
+DO NOT casually rewrite or remove these mechanisms.
+
+Inspect their actual implementation first.
+
+==================================================
+PRIMARY BUILD 3 OBJECTIVES
+==================================================
+
+Build 3 has four major goals:
+
+1. Preserve Build 2 runtime stability.
+
+2. Significantly improve component management:
+   - DXVK
+   - Wine
+   - Box64
+   - compatibility stacks
+
+3. SIGNIFICANTLY redesign and modernize the Vanta UI.
+
+4. Complete Vanta visual identity, including creating and integrating an ORIGINAL VANTA ICON.
+
+This must NOT be merely a rebranding build.
+
+==================================================
+1. INITIAL AUDIT
+==================================================
+
+Before implementing anything:
+
+Run and inspect:
+
+git status
+git diff --stat
+git branch --show-current
+git log --oneline -10
+
+Confirm that the working branch is:
+
+vanta-dev
+
+Inspect all existing modifications.
+
+Do not overwrite existing work.
+
+Inspect the Build 2 implementation before touching runtime code.
+
+Create a technical inventory of the current compatibility stack.
+
+==================================================
+2. PROTECT BUILD 2
+==================================================
+
+Preserve:
+
+RootFS extraction
+io.vanta.app paths
+legacy compatibility paths
+ComponentPaths
+StartupStatus
+startup.log
+container creation
+container startup
+XServer startup
+Wine startup
+Box64 execution
+graphics initialization
+existing working drivers
+input
+audio
+filesystem mappings
+error handling
+
+Do not refactor these systems merely for code cleanliness.
+
+Any change in these areas must have a concrete technical reason.
+
+==================================================
+3. COMPLETE COMPONENT INVENTORY
+==================================================
+
+Audit what ACTUALLY exists in the repository.
+
+Inspect:
+
+Wine
+Wine Staging
+WoW64
+Box64
+Box86
+DXVK
+DXVK Async if present
+VKD3D
+VKD3D-Proton
+WineD3D
+Turnip
+Mesa
+Vortek
+VirGL
+Zink
+Vulkan
+OpenGL
+Gladio
+other compatibility components
+
+For every relevant component determine:
+
+version
+architecture
+package format
+location
+installation mechanism
+selection mechanism
+container persistence
+runtime integration
+dependencies
+
+DO NOT ASSUME VERSIONS.
+
+The repository is the source of truth.
+
+==================================================
+4. DXVK MANAGER
+==================================================
+
+Audit the existing component-management architecture first.
+
+Reuse and extend existing Winlator/Vanta mechanisms rather than creating a second incompatible component system.
+
+Create or significantly improve a:
+
+DXVK Manager
+
+It should support:
+
+- listing installed versions;
+- showing the current/default version;
+- selecting versions;
+- per-container selection;
+- importing/installing compatible component packages when supported;
+- removing optional versions;
+- preventing accidental deletion of required fallback versions;
+- clearly showing which version is actually being used.
+
+Preserve all currently functional DXVK versions.
+
+Existing source previously indicated constants related to:
+
+DXVK 1.10.3
+DXVK 2.4.1
+
+VERIFY THIS.
+
+Do not assume those are still the complete set.
+
+==================================================
+5. MODERN DXVK OPTION
+==================================================
+
+Investigate whether a DXVK 2.6.x build can safely be integrated as a modern option.
+
+Do not select a build simply because it is newer.
+
+Evaluate:
+
+Vulkan requirements
+Turnip compatibility
+Android compatibility
+Wine integration
+architecture
+packaging
+current component loader
+Adreno compatibility considerations
+
+Do NOT make DXVK 3.x the default during this phase.
+
+Avoid unnecessarily raising Vulkan requirements.
+
+The application should retain compatibility-oriented fallbacks.
+
+==================================================
+6. DXVK UX
+==================================================
+
+Conceptually the UI may present categories such as:
+
+Recommended
+Modern
+Compatibility
+Legacy
+
+But ALWAYS display the actual underlying version.
+
+For example, ONLY IF ACTUALLY AVAILABLE:
+
+Recommended — DXVK 2.6.x
+Compatibility — DXVK 2.4.1
+Legacy — DXVK 1.10.3
+
+Never fabricate versions.
+
+The selection must affect the real runtime.
+
+Do not create decorative selectors that do nothing.
+
+==================================================
+7. DXVK INSTALLATION ARCHITECTURE
+==================================================
+
+When supported by the existing architecture, allow:
+
+Import
+Install
+Validate
+Register
+Select
+Remove
+
+Reuse existing component package formats.
+
+Do not introduce insecure arbitrary URL downloads.
+
+Essential bundled components must remain usable offline.
+
+==================================================
+8. WINE MANAGER
+==================================================
+
+The base project already contains Wine management infrastructure.
+
+AUDIT IT FIRST.
+
+Improve the existing Wine Manager rather than creating a duplicate system.
+
+The manager should clearly support concepts such as:
+
+Installed
+Available/Import
+Default
+Per-container selection
+
+MOST IMPORTANTLY:
+
+PRESERVE THE WINE VERSION THAT CURRENTLY WORKS IN BUILD 2.
+
+It must remain available as a fallback.
+
+==================================================
+9. MODERN WINE OPTION
+==================================================
+
+Investigate whether Wine 11.0 can be integrated as an additional modern option.
+
+Only integrate it if the package/build is genuinely compatible with the Vanta architecture.
+
+Validate:
+
+Android compatibility
+ARM64 environment
+WoW64
+Box64
+filesystem layout
+required libraries
+current component package format
+runtime integration
+
+Do not replace the currently working Wine simply because Wine 11 is newer.
+
+If Wine 11 cannot safely be integrated now:
+
+- keep the current Wine;
+- complete the manager architecture;
+- document the exact blocker.
+
+==================================================
+10. PREINSTALLED COMPONENTS
+==================================================
+
+Vanta should remain useful immediately after APK installation.
+
+Preserve currently bundled components.
+
+When technically reasonable, provide useful bundled options for:
+
+working Wine
+validated modern Wine
+Recommended DXVK
+Compatibility DXVK
+Legacy DXVK
+
+However:
+
+DO NOT inflate the APK by hundreds of megabytes unnecessarily.
+
+If bundling multiple Wine versions is too expensive:
+
+bundle the proven working Wine and allow additional Wine versions through the manager.
+
+Bundling multiple DXVK versions is acceptable if the size impact is reasonable.
+
+Report APK size impact.
+
+==================================================
+11. BOX64
+==================================================
+
+The currently functional Box64 path/configuration is critical.
+
+DO NOT REMOVE IT.
+
+DO NOT SILENTLY REPLACE IT.
+
+Audit:
+
+current Box64 version
+binary
+build configuration where available
+Dynarec
+RC configuration
+BOX64_* variables
+Wine integration
+WoW64 integration
+x86_64 execution
+per-container configuration
+
+The repository previously appeared to contain:
+
+box64-0.4.4.tzst
+
+VERIFY THIS.
+
+Do not redundantly add a version that already exists.
+
+Prepare the architecture for multiple Box64 versions if the current component system can safely support it.
+
+==================================================
+12. BOX64 PRESETS
+==================================================
+
+Create or improve clear presets:
+
+Compatibility
+Balanced
+Performance
+Custom
+
+Compatibility:
+
+prioritize stability and compatibility.
+
+Balanced:
+
+balance performance and compatibility while preserving safe existing behavior.
+
+Performance:
+
+enable more aggressive Dynarec optimizations only where technically justified.
+
+Custom:
+
+allow advanced control over existing supported options.
+
+CRITICAL RULE:
+
+DO NOT INVENT BOX64 ENVIRONMENT VARIABLES.
+
+Only use variables genuinely supported by the installed Box64 version.
+
+Do not apply aggressive options globally.
+
+Store the selected preset per container.
+
+==================================================
+13. BOX86
+==================================================
+
+If Box86 exists, preserve it.
+
+Do not remove existing 32-bit compatibility.
+
+Audit its relationship with:
+
+Wine
+WoW64
+Box64
+x86 applications
+
+Do not force Box86 where WoW64/Box64 is the appropriate architecture.
+
+==================================================
+14. GRAPHICS STACK
+==================================================
+
+Preserve ALL functional graphics backends.
+
+Audit:
+
+Turnip
+Mesa
+Vortek
+VirGL
+Zink
+Vulkan
+OpenGL
+Gladio
+
+Previous assets reportedly included versions such as:
+
+virgl-23.1.9
+vortek-2.1
+gladio-1.1
+turnip-26.2.0
+
+VERIFY THEM.
+
+Do not remove older drivers simply because newer ones exist.
+
+Do not perform a massive Turnip upgrade in this phase unless required for a specific verified fix.
+
+Different GPUs/games may require different drivers.
+
+Compatibility is more important than version numbers.
+
+==================================================
+15. PER-CONTAINER STACK
+==================================================
+
+Improve the configuration architecture so each container can maintain its own compatibility stack.
+
+Conceptual organization:
+
+Container
+
+DISPLAY
+- Resolution
+- DPI
+- Scaling
+
+GRAPHICS
+- Graphics Driver
+- DX Wrapper
+- DXVK Version
+- VKD3D Version
+
+COMPATIBILITY
+- Wine Version
+- Box64 Version
+- Box64 Preset
+
+AUDIO
+
+ENVIRONMENT
+
+ADVANCED
+
+Selections must:
+
+persist
+restore correctly
+appear correctly in UI
+actually reach the runtime
+
+Never implement fake settings.
+
+==================================================
+16. GENERIC COMPATIBILITY PRESETS
+==================================================
+
+Prepare generic presets:
+
+Compatibility
+Balanced
+Performance
+
+Do not create a huge game database during Build 3.
+
+Each preset must correspond to real settings.
+
+Users must always be able to override individual settings manually.
+
+==================================================
+17. BUILD 3 UI REQUIREMENT
+==================================================
+
+THIS IS A MAJOR REQUIREMENT.
+
+THE UI MUST ACTUALLY CHANGE.
+
+DO NOT consider the UI work complete by:
+
+changing Winlator to Vanta;
+changing one accent color;
+replacing the icon;
+changing a few strings;
+changing only the navigation header.
+
+SIGNIFICANTLY MODERNIZE THE EXISTING ANDROID UI.
+
+Do not unnecessarily rewrite the entire application in a different UI framework.
+
+Work with the existing Android architecture.
+
+Modify layouts, drawables, components, hierarchy, spacing, typography, cards, selectors and navigation where appropriate.
+
+After installing Build 3, the user should immediately recognize that the application has evolved into Vanta.
+
+==================================================
+18. VANTA DESIGN SYSTEM
+==================================================
+
+Create a coherent Vanta visual system.
+
+Visual direction:
+
+dark
+black
+graphite
+dark gray
+purple accent
+modern
+minimal
+technical
+gaming-oriented
+premium
+clean
+
+Avoid:
+
+excessive gradients
+excessive glow
+childish visuals
+oversized components
+expensive real-time blur
+heavy animations
+unnecessary large image assets
+copying another application's design
+
+Create/reorganize reusable resources for:
+
+colors
+backgrounds
+cards
+selectors
+borders
+shapes
+typography
+spacing
+pressed states
+selected states
+disabled states
+
+Maintain good contrast and readability.
+
+==================================================
+19. HOME / CONTAINERS REDESIGN
+==================================================
+
+Redesign the main Containers screen.
+
+Do not simply recolor the old list.
+
+Create a more modern presentation.
+
+Container cards may display useful information such as:
+
+Container name
+Wine
+Graphics Driver
+DXVK
+Resolution
+
+Do not overcrowd cards.
+
+Establish clear information hierarchy.
+
+Primary actions should remain easy to access:
+
+Launch
+Edit
+Duplicate
+Delete
+
+Use appropriate vector icons when practical.
+
+The empty state should also look intentional and polished.
+
+==================================================
+20. CREATE / EDIT CONTAINER REDESIGN
+==================================================
+
+Significantly modernize container configuration.
+
+Instead of presenting a large undifferentiated set of controls, organize options into understandable sections.
+
+Suggested structure:
+
+GENERAL
+
+Name
+Screen Size
+DPI
+
+GRAPHICS
+
+Graphics Driver
+DX Wrapper
+DXVK
+VKD3D
+
+COMPATIBILITY
+
+Wine
+Box64
+Preset
+
+AUDIO
+
+ADVANCED
+
+Environment Variables
+Windows Components
+Advanced Box64
+Debug
+
+Use:
+
+sections/cards
+consistent spacing
+clear section titles
+modern selectors
+consistent switches
+short descriptions where useful
+
+Do not remove existing advanced functionality.
+
+==================================================
+21. DXVK MANAGER UI
+==================================================
+
+Give the DXVK Manager a proper modern UI.
+
+Each installed version can be represented as a modern row/card containing:
+
+Version
+Status
+Installed state
+Default/selected state
+appropriate actions
+
+Clearly highlight the active/default version.
+
+Prefer a dedicated screen over overly complex dialogs when appropriate for the current architecture.
+
+==================================================
+22. WINE MANAGER UI
+==================================================
+
+Redesign the existing Wine Manager.
+
+Clearly display:
+
+Wine version
+architecture
+installation state
+default state
+selected state
+
+Make it understandable which Wine can be selected for a container.
+
+==================================================
+23. BOX64 UI
+==================================================
+
+Improve Box64 configuration UI.
+
+Conceptually:
+
+Box64 Version
+
+Preset:
+Compatibility
+Balanced
+Performance
+Custom
+
+When Custom is selected, advanced supported settings may be exposed.
+
+Do not dump dozens of technical environment variables into the primary configuration screen.
+
+==================================================
+24. NAVIGATION DRAWER
+==================================================
+
+REDESIGN THE NAVIGATION DRAWER.
+
+The current UI still contains visible Winlator identity.
+
+The new drawer should prominently use:
+
+the NEW VANTA ICON
+Vanta
+
+Preserve existing navigation functionality.
+
+Improve:
+
+header
+spacing
+icons
+selected state
+typography
+background
+touch feedback
+
+Remove the old blue Winlator icon where it represents the current application.
+
+==================================================
+25. TOOLBARS
+==================================================
+
+Standardize major toolbars.
+
+Use Vanta visual identity.
+
+Improve:
+
+titles
+back navigation
+menus
+alignment
+spacing
+actions
+
+Avoid inconsistent toolbar styles across screens.
+
+==================================================
+26. DIALOGS
+==================================================
+
+Modernize important dialogs including:
+
+delete confirmation
+creation
+component selection
+errors
+information
+
+Do not convert everything into a dialog.
+
+Use dedicated screens when a large amount of configuration is involved.
+
+==================================================
+27. STARTUP / LOADING UI
+==================================================
+
+Build 2 introduced real startup stages.
+
+KEEP THEM.
+
+Integrate them into the new visual design.
+
+Potential stages include:
+
+Preparing runtime
+Preparing container
+Extracting RootFS
+Starting XServer
+Starting Wine
+Running
+
+Do not return to an infinite generic:
+
+Starting...
+
+When an error occurs:
+
+show a concise user-facing message
+preserve technical details in logs
+
+==================================================
+28. ERROR FEEDBACK
+==================================================
+
+Improve user-facing feedback for cases such as:
+
+missing component
+invalid Wine
+invalid DXVK
+incompatible graphics driver
+startup failure
+
+Do not hide failures.
+
+Do not show giant stack traces to normal users.
+
+Keep technical logs available for debugging.
+
+==================================================
+29. UI PERFORMANCE
+==================================================
+
+The redesigned interface must remain lightweight.
+
+Avoid:
+
+heavy animations
+real-time expensive blur
+unnecessary shaders
+huge images
+poorly optimized assets
+
+Simple lightweight transitions are acceptable when supported by the existing architecture.
+
+Prioritize responsiveness.
+
+==================================================
+30. VANTA BRANDING
+==================================================
+
+Locate user-visible instances where:
+
+Winlator
+
+is being used as the current product name.
+
+Where it represents the current application identity, change it to:
+
+Vanta
+
+DO NOT remove Winlator references from:
+
+Credits
+About attribution
+LICENSE
+copyright
+upstr

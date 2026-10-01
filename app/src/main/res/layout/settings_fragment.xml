@@ -14,6 +14,70 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <TextView
+                style="@style/VantaSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dxvk_manager" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/vanta_form_card"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dxvk_manager_description"
+                    android:textColor="?attr/colorSecondaryText"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:id="@+id/LLDXVKManagerVersions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/component_package_to_manage" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/SDXVKManagerVersion"
+                        style="@style/ComboBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <LinearLayout
+                        android:id="@+id/DXVKManagerToolbox"
+                        style="@style/Toolbox">
+
+                        <ImageButton
+                            style="@style/ListMenuButton"
+                            android:src="@drawable/icon_install"
+                            android:tag="install" />
+
+                        <ImageButton
+                            style="@style/ListMenuButton"
+                            android:layout_marginRight="0dp"
+                            android:src="@drawable/icon_remove"
+                            android:tag="remove" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
@@ -457,14 +521,22 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:visibility="gone">
+                        android:visibility="visible">
 
                         <View style="@style/FieldSeparator" />
 
                         <TextView
+                            style="@style/VantaSectionLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/wine_version" />
+                            android:text="@string/wine_manager" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/wine_manager_description"
+                            android:textColor="?attr/colorSecondaryText"
+                            android:textSize="13sp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -492,6 +564,22 @@
                                     android:src="@drawable/icon_remove" />
                             </LinearLayout>
                         </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/TVWineManagerInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textColor="?attr/colorSecondaryText"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/wine_package_abi_note"
+                            android:textColor="?attr/colorSecondaryText"
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <View style="@style/FieldSeparator" />

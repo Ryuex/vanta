@@ -135,8 +135,8 @@ public abstract class WineInstaller {
             return;
         }
 
-        final boolean is64Bit = (wineBin64.isFile() && ElfHelper.is64Bit(wineBin64)) || ElfHelper.is64Bit(wineBin);
-        if (!is64Bit) {
+        final boolean isX86_64 = (wineBin64.isFile() && ElfHelper.isX86_64(wineBin64)) || ElfHelper.isX86_64(wineBin);
+        if (!isX86_64) {
             callback.call(null);
             return;
         }
@@ -183,7 +183,17 @@ public abstract class WineInstaller {
         if (files != null) {
             for (File file : files) {
                 String name = file.getName();
-                if (name.startsWith("wine")) wineInfos.add(WineInfo.fromIdentifier(context, name));
+                if (!name.startsWith("wine")) continue;
+
+                WineInfo wineInfo = WineInfo.fromIdentifier(context, name);
+                if (wineInfo == WineInfo.MAIN_WINE_INFO || !file.isDirectory()) continue;
+
+                File wineBin = new File(file, "bin/wine");
+                File wineBin64 = new File(file, "bin/wine64");
+                File containerPattern = new File(installedWineDir, "container-pattern-"+wineInfo.fullVersion()+".tzst");
+                boolean hasX86_64Wine = (wineBin64.isFile() && ElfHelper.isX86_64(wineBin64)) ||
+                                        (wineBin.isFile() && ElfHelper.isX86_64(wineBin));
+                if (hasX86_64Wine && containerPattern.isFile()) wineInfos.add(wineInfo);
             }
         }
 

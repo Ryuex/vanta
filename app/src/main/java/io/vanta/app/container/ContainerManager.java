@@ -153,6 +153,8 @@ public class ContainerManager {
         dstContainer.setHUDMode(srcContainer.getHUDMode());
         dstContainer.setStartupSelection(srcContainer.getStartupSelection());
         dstContainer.setBox64Preset(srcContainer.getBox64Preset());
+        dstContainer.setBox64Version(srcContainer.getBox64Version());
+        dstContainer.setWineVersion(srcContainer.getWineVersion());
         dstContainer.setDesktopTheme(srcContainer.getDesktopTheme());
         dstContainer.saveData();
 

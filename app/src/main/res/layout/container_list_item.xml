@@ -3,44 +3,106 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    android:gravity="center_vertical">
-
-    <ImageView
-        android:id="@+id/ImageView"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        app:tint="?attr/colorPrimaryVariant" />
-
-    <TextView
-        android:id="@+id/TVTitle"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:ellipsize="end"
-        android:maxLines="1" />
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/vanta_card_background"
+    android:orientation="vertical"
+    android:padding="14dp">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <ImageView
-            style="@style/LeftSideButton"
+            android:id="@+id/ImageView"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/vanta_icon_tile"
+            android:contentDescription="@string/container"
+            android:padding="12dp"
+            android:src="@drawable/icon_container"
+            app:tint="#c4b5fd" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/TVTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/colorPrimaryText"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/TVSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/colorSecondaryText"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/TVGraphics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="?attr/colorSecondaryText"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
             android:id="@+id/BTRun"
-            android:layout_marginRight="2dp"
-            android:src="@drawable/icon_run" />
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@drawable/vanta_primary_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:minWidth="112dp"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:text="@string/launch"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <ImageView
             style="@style/RightSideButton"
             android:id="@+id/BTMenu"
-            android:layout_marginLeft="2dp"
-            android:src="@drawable/icon_list_item_menu" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/more_options"
+            android:src="@drawable/icon_list_item_menu"
+            app:tint="?attr/colorSecondaryText" />
     </LinearLayout>
 </LinearLayout>

@@ -1,8 +1,10 @@
 package io.vanta.app.contentdialog;
 
 import android.content.Context;
+import android.widget.AdapterView;
 import android.view.View;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import io.vanta.app.R;
 import io.vanta.app.container.DXWrappers;
@@ -30,6 +32,7 @@ public class DXVKConfigDialog extends ContentDialog {
         final Spinner sMaxDeviceMemory = findViewById(R.id.SMaxDeviceMemory);
         final Spinner sCustomDevice = findViewById(R.id.SCustomDevice);
         final Spinner sDDrawWrapper = findViewById(R.id.SDDrawWrapper);
+        final TextView tvVersionProfile = findViewById(R.id.TVDXVKVersionProfile);
 
         KeyValueSet config = new KeyValueSet(anchor.getTag());
         AppUtils.setSpinnerSelectionFromIdentifier(sFramerate, config.get("framerate", "0"));
@@ -39,6 +42,23 @@ public class DXVKConfigDialog extends ContentDialog {
         String version = config.get("version");
         String defaultVersion = DefaultVersion.DXVK(graphicsDriver);
         GeneralComponents.initViews(GeneralComponents.Type.DXVK, findViewById(R.id.DXVKToolbox), sVersion, version, defaultVersion);
+        Runnable updateVersionProfile = () -> {
+            if (sVersion.getSelectedItem() == null) return;
+            String selectedVersion = sVersion.getSelectedItem().toString();
+            int profile = selectedVersion.equals(defaultVersion) ? R.string.dxvk_profile_recommended :
+                    (selectedVersion.equals(DefaultVersion.MINOR_DXVK) ? R.string.dxvk_profile_compatibility : R.string.dxvk_profile_installed);
+            tvVersionProfile.setText(context.getString(profile, selectedVersion));
+        };
+        sVersion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateVersionProfile.run();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        updateVersionProfile.run();
 
         GPUCardAdapter adapter = new GPUCardAdapter(context, android.R.layout.simple_spinner_dropdown_item, R.string.none);
         sCustomDevice.setAdapter(adapter);

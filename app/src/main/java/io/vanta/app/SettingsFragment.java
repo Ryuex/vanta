@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -40,6 +41,8 @@ import io.vanta.app.box64.Box64Preset;
 import io.vanta.app.box64.Box64PresetManager;
 import io.vanta.app.container.Container;
 import io.vanta.app.container.ContainerManager;
+import io.vanta.app.container.DXWrappers;
+import io.vanta.app.container.GraphicsDrivers;
 import io.vanta.app.contentdialog.ContentDialog;
 import io.vanta.app.contentdialog.GamepadPlayerConfigDialog;
 import io.vanta.app.contentdialog.SoundFontTestDialog;
@@ -49,9 +52,11 @@ import io.vanta.app.core.Callback;
 import io.vanta.app.core.DefaultVersion;
 import io.vanta.app.core.FileUtils;
 import io.vanta.app.core.GeneralComponents;
+import io.vanta.app.core.KeyValueSet;
 import io.vanta.app.core.LocaleHelper;
 import io.vanta.app.core.PreloaderDialog;
 import io.vanta.app.core.StringUtils;
+import io.vanta.app.core.UnitUtils;
 import io.vanta.app.core.WineInfo;
 import io.vanta.app.core.WineInstaller;
 import io.vanta.app.services.NotificationUtils;
@@ -128,6 +133,12 @@ public class SettingsFragment extends Fragment {
 
         final Spinner sBox64Preset = view.findViewById(R.id.SBox64Preset);
         loadBox64PresetSpinner(view, sBox64Preset);
+
+        final Spinner sDXVKManagerVersion = view.findViewById(R.id.SDXVKManagerVersion);
+        Runnable refreshDXVKVersions = () -> showDXVKManagerVersions(view);
+        GeneralComponents.initViews(GeneralComponents.Type.DXVK, view.findViewById(R.id.DXVKManagerToolbox),
+                sDXVKManagerVersion, null, DefaultVersion.MAJOR_DXVK, refreshDXVKVersions);
+        refreshDXVKVersions.run();
 
         final RadioGroup rgAppTheme = view.findViewById(R.id.RGAppTheme);
         final int oldAppThemeId = preferences.getInt("app_theme", APP_THEME_DARK) == APP_THEME_DARK ? R.id.RBDark : R.id.RBLight;
@@ -218,9 +229,7 @@ public class SettingsFragment extends Fragment {
 
         loadGamepadPlayerConfigs(view);
 
-        if (MainActivity.DEBUG_MODE) {
-            view.findViewById(R.id.LLWineInstallation).setVisibility(View.VISIBLE);
-        }
+        view.findViewById(R.id.LLWineInstallation).setVisibility(View.VISIBLE);
 
         view.findViewById(R.id.BTConfirm).setOnClickListener((v) -> {
             SharedPreferences.Editor editor = preferences.edit();
@@ -340,6 +349,52 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+    private void showDXVKManagerVersions(View view) {
+        LinearLayout rows = view.findViewById(R.id.LLDXVKManagerVersions);
+        rows.removeAllViews();
+
+        ArrayList<String> versions = GeneralComponents.getAvailableComponentNames(GeneralComponents.Type.DXVK, getContext());
+        for (String version : versions) {
+            String source = getString(GeneralComponents.isBuiltinComponent(GeneralComponents.Type.DXVK, version) ?
+                    R.string.dxvk_package_bundled : R.string.dxvk_package_imported);
+            int selectedContainers = getDXVKContainerUseCount(version);
+            String text;
+            if (version.equals(DefaultVersion.MAJOR_DXVK)) {
+                text = getString(R.string.dxvk_manager_row_default, version, source, selectedContainers);
+            }
+            else if (version.equals(DefaultVersion.MINOR_DXVK)) {
+                text = getString(R.string.dxvk_manager_row_fallback, version, source, selectedContainers);
+            }
+            else {
+                text = getString(R.string.dxvk_manager_row_installed, version, source, selectedContainers);
+            }
+
+            TextView row = new TextView(getContext());
+            row.setText(text);
+            int horizontalPadding = (int)UnitUtils.dpToPx(12);
+            int verticalPadding = (int)UnitUtils.dpToPx(10);
+            row.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+            row.setBackgroundResource(R.drawable.vanta_card_background);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.bottomMargin = (int)UnitUtils.dpToPx(6);
+            rows.addView(row, params);
+        }
+    }
+
+    private int getDXVKContainerUseCount(String version) {
+        int count = 0;
+        for (Container container : new ContainerManager(getContext()).getContainers()) {
+            if (!DXWrappers.DXVK.equals(container.getDXWrapper())) continue;
+            KeyValueSet[] config = DXWrappers.parseConfigs(container.getDXWrapper(), container.getDXWrapperConfig());
+            String[] drivers = GraphicsDrivers.parseIdentifiers(container.getGraphicsDriver());
+            String selectedVersion = config[0].get("version", DefaultVersion.DXVK(drivers[0]));
+            if (version.equals(selectedVersion)) count++;
+        }
+        return count;
+    }
+
     private void removeInstalledWine(WineInfo wineInfo, Runnable onSuccess) {
         final Activity activity = getActivity();
         ContainerManager manager = new ContainerManager(activity);
@@ -363,10 +418,23 @@ public class SettingsFragment extends Fragment {
 
         preloaderDialog.show(R.string.removing_wine);
         Executors.newSingleThreadExecutor().execute(() -> {
-            FileUtils.delete(wineDir);
-            FileUtils.delete(containerPatternFile);
+            File wineBackup = new File(installedWineDir, ".wine-remove-"+System.nanoTime());
+            File patternBackup = new File(installedWineDir, ".pattern-remove-"+System.nanoTime());
+            boolean movedWine = wineDir.renameTo(wineBackup);
+            boolean movedPattern = movedWine && containerPatternFile.renameTo(patternBackup);
+            boolean removed = false;
+            if (!movedPattern) {
+                if (movedWine) wineBackup.renameTo(wineDir);
+                activity.runOnUiThread(() -> AppUtils.showToast(activity, R.string.unable_to_remove_this_wine_version));
+            }
+            else {
+                boolean wineRemoved = FileUtils.delete(wineBackup);
+                boolean patternRemoved = FileUtils.delete(patternBackup);
+                removed = wineRemoved && patternRemoved;
+                if (!removed) activity.runOnUiThread(() -> AppUtils.showToast(activity, R.string.unable_to_remove_this_wine_version));
+            }
             preloaderDialog.closeOnUiThread();
-            if (onSuccess != null) activity.runOnUiThread(onSuccess);
+            if (removed && onSuccess != null) activity.runOnUiThread(onSuccess);
         });
     }
 
@@ -374,6 +442,29 @@ public class SettingsFragment extends Fragment {
         Context context = getContext();
         final ArrayList<WineInfo> wineInfos = WineInstaller.getInstalledWineInfos(context);
         sWineVersion.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, wineInfos));
+        TextView wineInfoView = view.findViewById(R.id.TVWineManagerInfo);
+        Runnable updateInfo = () -> {
+            int selected = sWineVersion.getSelectedItemPosition();
+            if (selected < 0 || selected >= wineInfos.size()) return;
+            WineInfo wineInfo = wineInfos.get(selected);
+            int selectedContainers = 0;
+            for (Container container : new ContainerManager(context).getContainers()) {
+                if (container.getWineVersion().equals(wineInfo.identifier())) selectedContainers++;
+            }
+            wineInfoView.setText(wineInfo == WineInfo.MAIN_WINE_INFO ?
+                    context.getString(R.string.wine_builtin_default_details, wineInfo.fullVersion(), selectedContainers) :
+                    context.getString(R.string.wine_installed_details, wineInfo.fullVersion(), selectedContainers));
+        };
+        sWineVersion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View child, int position, long id) {
+                updateInfo.run();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        updateInfo.run();
 
         view.findViewById(R.id.BTInstallWine).setOnClickListener((v) -> selectWineFileForInstall());
         view.findViewById(R.id.BTRemoveWine).setOnClickListener((v) -> {
